@@ -87,8 +87,16 @@ const Sidebar = ({
               {Object.entries(cameras).map(([cameraId, camera]) => (
                 <div
                   key={cameraId}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                      type: 'camera',
+                      cameraId,
+                      camera
+                    }));
+                  }}
                   onClick={() => onSelectCamera(cameraId)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                  className={`p-3 rounded-lg border cursor-move transition-all ${
                     selectedCamera === cameraId 
                       ? 'border-primary bg-primary bg-opacity-20' 
                       : 'border-gray-700 hover:border-gray-600 bg-gray-800'

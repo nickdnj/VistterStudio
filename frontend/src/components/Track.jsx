@@ -4,7 +4,7 @@ import { Eye, EyeOff, Volume2, VolumeX, MoreVertical, Trash2, Lock, Unlock } fro
 const Track = ({ 
   track, 
   zoom, 
-  timelinePosition, 
+  currentTime, 
   onAddElement, 
   onUpdateElement, 
   onRemoveElement, 
@@ -34,6 +34,17 @@ const Track = ({
           duration: data.asset.category === 'images' ? 5 : 10, // Default durations
           assetUrl: data.asset.url,
           asset: data.asset
+        };
+        onAddElement(newElement);
+      } else if (data.type === 'camera') {
+        const newElement = {
+          id: `element_${Date.now()}`,
+          type: 'camera',
+          name: data.camera.nickname,
+          startTime: timePosition,
+          duration: 10, // Default camera duration
+          cameraId: data.cameraId,
+          camera: data.camera
         };
         onAddElement(newElement);
       }

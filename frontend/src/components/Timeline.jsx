@@ -2,64 +2,20 @@ import { useState } from 'react';
 import { Plus, Trash2, Copy, Scissors, Volume2, Eye } from 'lucide-react';
 import Track from './Track';
 
-const Timeline = ({ className = "" }) => {
-  const [tracks, setTracks] = useState([
-    { id: 'main', name: 'Main Track', type: 'video', elements: [], color: 'bg-blue-600' },
-    { id: 'overlay1', name: 'Overlay 1', type: 'overlay', elements: [], color: 'bg-green-600' },
-    { id: 'overlay2', name: 'Overlay 2', type: 'overlay', elements: [], color: 'bg-purple-600' },
-    { id: 'audio', name: 'Audio', type: 'audio', elements: [], color: 'bg-orange-600' },
-  ]);
-  
-  const [timelinePosition, setTimelinePosition] = useState(0);
+const Timeline = ({ 
+  tracks,
+  currentTime,
+  setCurrentTime,
+  duration,
+  addTrack,
+  removeTrack,
+  addElementToTrack,
+  updateTrackElement,
+  removeElementFromTrack,
+  className = "" 
+}) => {
   const [zoom, setZoom] = useState(1);
   const [selectedElements, setSelectedElements] = useState([]);
-
-  const addTrack = (type = 'overlay') => {
-    const newTrack = {
-      id: `${type}_${Date.now()}`,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.filter(t => t.type === type).length + 1}`,
-      type,
-      elements: [],
-      color: type === 'video' ? 'bg-blue-600' :
-             type === 'overlay' ? 'bg-green-600' :
-             type === 'audio' ? 'bg-orange-600' : 'bg-gray-600'
-    };
-    setTracks([...tracks, newTrack]);
-  };
-
-  const removeTrack = (trackId) => {
-    if (tracks.length <= 1) return; // Keep at least one track
-    setTracks(tracks.filter(track => track.id !== trackId));
-  };
-
-  const addElementToTrack = (trackId, element) => {
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { ...track, elements: [...track.elements, element] }
-        : track
-    ));
-  };
-
-  const updateTrackElement = (trackId, elementId, updates) => {
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { 
-            ...track, 
-            elements: track.elements.map(el => 
-              el.id === elementId ? { ...el, ...updates } : el
-            )
-          }
-        : track
-    ));
-  };
-
-  const removeElementFromTrack = (trackId, elementId) => {
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { ...track, elements: track.elements.filter(el => el.id !== elementId) }
-        : track
-    ));
-  };
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -104,7 +60,7 @@ const Timeline = ({ className = "" }) => {
           </div>
           
           <div className="text-sm text-white font-mono">
-            {formatTime(timelinePosition)}
+            {formatTime(currentTime)}
           </div>
         </div>
       </div>
@@ -128,7 +84,7 @@ const Timeline = ({ className = "" }) => {
               key={track.id}
               track={track}
               zoom={zoom}
-              timelinePosition={timelinePosition}
+              currentTime={currentTime}
               onAddElement={(element) => addElementToTrack(track.id, element)}
               onUpdateElement={(elementId, updates) => updateTrackElement(track.id, elementId, updates)}
               onRemoveElement={(elementId) => removeElementFromTrack(track.id, elementId)}
