@@ -88,4 +88,4 @@ Contributions are welcome! If you'd like to contribute to VistterStudio, please 
 
 ## License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the AGPL-3.0 License - see the `LICENSE` file for details.
