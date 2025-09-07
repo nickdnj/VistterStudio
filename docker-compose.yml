@@ -1,26 +1,30 @@
-version: '3.8'
-
 services:
   wyze-bridge:
     container_name: wyze-bridge
     restart: unless-stopped
     image: mrlt8/wyze-bridge:latest
     ports:
-      - "1935:1935" # RTMP
-      - "8554:8554" # RTSP
-      - "8888:8888" # HLS
-      - "5000:5000" # API
-    environment:
-      - WYZE_EMAIL=${WYZE_EMAIL}
-      - WYZE_PASSWORD=${WYZE_PASSWORD}
-    # Optional: Add any other environment variables for Wyze Bridge here
-    # See https://github.com/mrlt8/docker-wyze-bridge for more options
+      - "11935:1935" # RTMP
+      - "18554:8554" # RTSP
+      - "18888:8888" # HLS
+      - "15000:5000" # API
+    env_file:
+      - .env
   
   vistterstudio:
     container_name: vistterstudio
     restart: unless-stopped
     build: ./server
     ports:
-      - "8080:8080"
+      - "18080:8080"
     depends_on:
       - wyze-bridge
+
+  frontend:
+    container_name: vistterstudio-frontend
+    restart: unless-stopped
+    build: ./frontend
+    ports:
+      - "19000:80"
+    depends_on:
+      - vistterstudio

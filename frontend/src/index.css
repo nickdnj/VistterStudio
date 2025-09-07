@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #0d0d0d 0%, #1a1a1a 100%);
+  margin: 0;
+  padding: 0;
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Streaming UI Components */
+.stream-card {
+  @apply bg-gray-800 rounded-lg border border-gray-700 hover:border-primary transition-all duration-300;
+}
+
+.stream-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 123, 255, 0.2);
+}
+
+.btn-primary {
+  @apply bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-colors duration-200;
+}
+
+.mixer-panel {
+  @apply bg-gray-900 border border-gray-700 rounded-lg p-4;
+}
