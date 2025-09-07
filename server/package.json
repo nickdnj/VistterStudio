@@ -1,0 +1,22 @@
+{
+  "name": "vistterstudio",
+  "version": "1.0.0",
+  "description": "VistterStudio is a powerful, open-source solution for integrating Wyze cameras with professional streaming and broadcasting software. By leveraging the Wyze Bridge, VistterStudio provides a seamless way to ingest RTSP, RTMP, and HLS streams from your Wyze cameras, enabling you to use them in applications like OBS, VLC, or your own custom streaming solutions.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

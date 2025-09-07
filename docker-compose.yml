@@ -16,11 +16,11 @@ services:
     # Optional: Add any other environment variables for Wyze Bridge here
     # See https://github.com/mrlt8/docker-wyze-bridge for more options
   
-  # vistterstudio:
-  #   container_name: vistterstudio
-  #   restart: unless-stopped
-  #   build: .
-  #   ports:
-  #     - "8080:80"
-  #   depends_on:
-  #     - wyze-bridge
+  vistterstudio:
+    container_name: vistterstudio
+    restart: unless-stopped
+    build: ./server
+    ports:
+      - "8080:8080"
+    depends_on:
+      - wyze-bridge
