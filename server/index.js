@@ -1,7 +1,14 @@
 const express = require('express');
 const axios = require('axios');
+const cors = require('cors');
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors({
+    origin: ['http://localhost:19000', 'http://localhost:3000', 'http://localhost:5173'],
+    credentials: true
+}));
 const PORT = process.env.PORT || 8080;
 
 // The URL for the Wyze Bridge container
