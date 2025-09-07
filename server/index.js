@@ -6,6 +6,7 @@ const PORT = process.env.PORT || 8080;
 
 // The URL for the Wyze Bridge container
 const WYZE_BRIDGE_URL = 'http://wyze-bridge:5000';
+const WYZE_BRIDGE_API_KEY = 'D-hNZigAPnrotiyn5_-zbzJyfMjLJpDlRrxKF-xQ';
 
 app.get('/', (req, res) => {
     res.send('VistterStudio Server is running!');
@@ -22,7 +23,7 @@ app.get('/', (req, res) => {
  */
 app.get('/api/status', async (req, res) => {
     try {
-        const response = await axios.get(`${WYZE_BRIDGE_URL}/status`);
+        const response = await axios.get(`${WYZE_BRIDGE_URL}/api?api=${WYZE_BRIDGE_API_KEY}`);
         res.json(response.data);
     } catch (error) {
         console.error('Error fetching status from Wyze Bridge:', error.message);
@@ -41,7 +42,7 @@ app.get('/api/status', async (req, res) => {
  */
 app.get('/api/cams', async (req, res) => {
     try {
-        const response = await axios.get(`${WYZE_BRIDGE_URL}/cams`);
+        const response = await axios.get(`${WYZE_BRIDGE_URL}/api?api=${WYZE_BRIDGE_API_KEY}`);
         res.json(response.data);
     } catch (error) {
         console.error('Error fetching cameras from Wyze Bridge:', error.message);
