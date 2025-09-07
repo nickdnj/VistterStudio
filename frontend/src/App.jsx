@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Monitor, Camera, Settings, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { Monitor, Camera, Settings, Play, Pause, Volume2, VolumeX, Film, Plus, Clock, Layers, FolderOpen } from 'lucide-react'
 import axios from 'axios'
+import VideoPlayer from './components/VideoPlayer'
+import AssetManager from './components/AssetManager'
 import './App.css'
 
 // API base URL - adjust for your Docker setup
@@ -12,6 +14,12 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [mixerMode, setMixerMode] = useState(false)
+  const [timelineMode, setTimelineMode] = useState(false)
+  const [overlayMode, setOverlayMode] = useState(false)
+  const [timelineSegments, setTimelineSegments] = useState([])
+  const [activeOverlays, setActiveOverlays] = useState([])
+  const [assetManagerOpen, setAssetManagerOpen] = useState(false)
+  const [selectedAsset, setSelectedAsset] = useState(null)
 
   useEffect(() => {
     fetchCameras()
@@ -94,8 +102,37 @@ function App() {
               }`}
             >
               <Settings className="h-4 w-4" />
-              <span>Mixer Mode</span>
+              <span>Mixer</span>
             </button>
+            
+            <button 
+              onClick={() => setTimelineMode(!timelineMode)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                timelineMode ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              <Film className="h-4 w-4" />
+              <span>Timeline</span>
+            </button>
+            
+            <button 
+              onClick={() => setOverlayMode(!overlayMode)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                overlayMode ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              <Layers className="h-4 w-4" />
+              <span>Overlays</span>
+            </button>
+            
+            <button 
+              onClick={() => setAssetManagerOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600"
+            >
+              <FolderOpen className="h-4 w-4" />
+              <span>Assets</span>
+            </button>
+            
             <div className="text-sm text-gray-400">
               {cameraList.length} cameras • {cameraList.filter(([_, cam]) => cam.enabled).length} enabled
             </div>
@@ -165,24 +202,13 @@ function App() {
                 
                 {/* Video Player */}
                 <div className="relative bg-black rounded-lg overflow-hidden h-[70vh]">
-                  <video 
+                  <VideoPlayer
                     key={selectedCamera}
-                    className="w-full h-full object-contain"
-                    controls
-                    autoPlay
-                    muted
-                    playsInline
-                  >
-                    <source 
-                      src={getStreamUrl(cameras[selectedCamera], 'hls')} 
-                      type="application/x-mpegURL" 
-                    />
-                    <source 
-                      src={getStreamUrl(cameras[selectedCamera], 'rtsp')} 
-                      type="application/x-rtsp" 
-                    />
-                    Your browser does not support the video tag.
-                  </video>
+                    src={getStreamUrl(cameras[selectedCamera], 'hls')}
+                    className="w-full h-full"
+                    autoPlay={true}
+                    muted={true}
+                  />
                   
                   {/* Stream Info Overlay */}
                   <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white">
@@ -227,22 +253,141 @@ function App() {
                   <div key={cameraId} className="mixer-panel">
                     <div className="text-sm font-medium text-white mb-2">{camera.nickname}</div>
                     <div className="h-20 bg-black rounded overflow-hidden">
-                      <video 
+                      <VideoPlayer
+                        src={getStreamUrl(camera, 'hls')}
                         className="w-full h-full object-cover"
-                        muted
-                        autoPlay
-                        playsInline
-                      >
-                        <source src={getStreamUrl(camera, 'hls')} type="application/x-mpegURL" />
-                      </video>
+                        autoPlay={true}
+                        muted={true}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* Timeline Panel */}
+          {timelineMode && (
+            <div className="h-64 border-t border-gray-700 bg-dark p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Timeline Editor</h3>
+                <button 
+                  onClick={() => setTimelineSegments([...timelineSegments, { id: Date.now(), camera: selectedCamera, start: 0, duration: 5, overlays: [] }])}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Segment</span>
+                </button>
+              </div>
+              
+              <div className="bg-gray-800 rounded-lg p-4 h-48 overflow-x-auto">
+                <div className="flex space-x-2 h-full">
+                  {timelineSegments.map((segment, index) => (
+                    <div key={segment.id} className="bg-blue-600 rounded p-2 min-w-48 h-full flex flex-col justify-between">
+                      <div className="text-white text-xs">
+                        <div className="font-semibold">{cameras[segment.camera]?.nickname || 'Camera'}</div>
+                        <div>{segment.duration}s segment</div>
+                      </div>
+                      <div className="flex space-x-1">
+                        <button 
+                          onClick={() => setTimelineSegments(timelineSegments.filter(s => s.id !== segment.id))}
+                          className="text-red-300 hover:text-red-100 text-xs"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {timelineSegments.length === 0 && (
+                    <div className="text-gray-400 text-center w-full flex items-center justify-center">
+                      <div>
+                        <Clock className="h-8 w-8 mx-auto mb-2" />
+                        <p>No segments yet. Add a segment to start building your timeline.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Overlay Panel */}
+          {overlayMode && (
+            <div className="h-64 border-t border-gray-700 bg-dark p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Overlay Studio</h3>
+                <div className="flex space-x-2">
+                  <button className="btn-secondary flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Weather</span>
+                  </button>
+                  <button className="btn-secondary flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Tide</span>
+                  </button>
+                  <button className="btn-secondary flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Text</span>
+                  </button>
+                  <button className="btn-secondary flex items-center space-x-2">
+                    <Plus className="h-4 w-4" />
+                    <span>Logo</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-4 gap-4 h-48">
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-2">Weather Widget</h4>
+                  <div className="text-gray-300 text-sm">
+                    <div>🌤️ 75°F</div>
+                    <div>Partly Cloudy</div>
+                    <div>Winds: 5mph NE</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-2">Tide Info</h4>
+                  <div className="text-gray-300 text-sm">
+                    <div>🌊 High: 6:45 AM</div>
+                    <div>📉 Low: 12:30 PM</div>
+                    <div>Current: Rising</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-2">Lower Third</h4>
+                  <div className="text-gray-300 text-sm">
+                    <div>📺 Breaking News</div>
+                    <div>Custom text overlay</div>
+                    <div>Name plates</div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h4 className="text-white font-medium mb-2">Branding</h4>
+                  <div className="text-gray-300 text-sm">
+                    <div>📺 Logo overlay</div>
+                    <div>Watermarks</div>
+                    <div>Channel ID</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+      
+      {/* Asset Manager Modal */}
+      <AssetManager
+        isOpen={assetManagerOpen}
+        onClose={() => setAssetManagerOpen(false)}
+        onSelectAsset={(asset) => {
+          setSelectedAsset(asset);
+          console.log('Selected asset:', asset);
+          // You can add logic here to handle asset selection
+        }}
+      />
     </div>
   )
 }

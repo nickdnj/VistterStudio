@@ -17,6 +17,8 @@ services:
     build: ./server
     ports:
       - "18080:8080"
+    volumes:
+      - ./server/assets:/usr/src/app/assets
     depends_on:
       - wyze-bridge
 
