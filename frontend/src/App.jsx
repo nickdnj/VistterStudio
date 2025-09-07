@@ -18,7 +18,7 @@ function App() {
   
   // Layout state
   const [sidebarWidth, setSidebarWidth] = useState(320)
-  const [timelineHeight, setTimelineHeight] = useState(300)
+  const [timelineHeight, setTimelineHeight] = useState(250)
   const [isResizing, setIsResizing] = useState(false)
 
   useEffect(() => {
@@ -174,15 +174,18 @@ function App() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Preview Window */}
           <div 
-            className="flex-1 min-h-0"
+            className="flex-1 min-h-0 flex items-center justify-center"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <PreviewWindow
-              selectedCamera={selectedCamera}
-              cameras={cameras}
-              getStreamUrl={getStreamUrl}
-              className="h-full m-4"
-            />
+            <div className="w-full max-w-5xl mx-auto p-4">
+              <PreviewWindow
+                selectedCamera={selectedCamera}
+                cameras={cameras}
+                getStreamUrl={getStreamUrl}
+                className="w-full"
+                style={{ maxHeight: '60vh' }}
+              />
+            </div>
           </div>
 
           {/* Timeline Resize Handle */}

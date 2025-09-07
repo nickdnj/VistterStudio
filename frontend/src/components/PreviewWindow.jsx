@@ -55,57 +55,55 @@ const PreviewWindow = ({ selectedCamera, cameras, getStreamUrl, className = "" }
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 bg-black rounded-b-lg overflow-hidden relative">
+      <div className="flex-1 bg-black rounded-b-lg overflow-hidden relative flex items-center justify-center">
         {selectedCamera && cameras[selectedCamera] ? (
-          <VideoPlayer
-            key={selectedCamera}
-            src={getStreamUrl(cameras[selectedCamera], 'hls')}
-            className="w-full h-full"
-            autoPlay={isPlaying}
-            muted={isMuted}
-          />
+          <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
+            <VideoPlayer
+              key={selectedCamera}
+              src={getStreamUrl(cameras[selectedCamera], 'hls')}
+              className="w-full h-full rounded"
+              autoPlay={isPlaying}
+              muted={isMuted}
+            />
+            
+            {/* Stream Info Overlay */}
+            <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">
+              <div className="space-y-1">
+                <div>📍 {cameras[selectedCamera].ip}</div>
+                <div>🎥 {cameras[selectedCamera].is_2k ? '2K' : 'HD'} Quality</div>
+                <div>⚡ {cameras[selectedCamera].req_bitrate}kbps</div>
+              </div>
+            </div>
+
+            {/* Playback Controls Overlay */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+              <div className="flex items-center space-x-3 bg-black bg-opacity-70 rounded-lg px-4 py-2">
+                <button
+                  onClick={togglePlayback}
+                  className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-5 w-5 text-white" />
+                  ) : (
+                    <Play className="h-5 w-5 text-white" />
+                  )}
+                </button>
+                <button className="p-2 hover:bg-gray-600 rounded-lg transition-colors">
+                  <Square className="h-4 w-4 text-white" />
+                </button>
+                <div className="text-white text-sm font-mono">
+                  00:00 / --:--
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center text-gray-400">
-              <div className="text-6xl mb-4">📹</div>
-              <h3 className="text-xl font-semibold mb-2">No Camera Selected</h3>
-              <p>Select a camera from the sidebar to start previewing</p>
-            </div>
+          <div className="text-center text-gray-400">
+            <div className="text-6xl mb-4">📹</div>
+            <h3 className="text-xl font-semibold mb-2">No Camera Selected</h3>
+            <p>Select a camera from the sidebar to start previewing</p>
           </div>
         )}
-
-        {/* Stream Info Overlay */}
-        {selectedCamera && cameras[selectedCamera] && (
-          <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">
-            <div className="space-y-1">
-              <div>📍 {cameras[selectedCamera].ip}</div>
-              <div>🎥 {cameras[selectedCamera].is_2k ? '2K' : 'HD'} Quality</div>
-              <div>⚡ {cameras[selectedCamera].req_bitrate}kbps</div>
-            </div>
-          </div>
-        )}
-
-        {/* Playback Controls Overlay */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-          <div className="flex items-center space-x-3 bg-black bg-opacity-70 rounded-lg px-4 py-2">
-            <button
-              onClick={togglePlayback}
-              className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-            >
-              {isPlaying ? (
-                <Pause className="h-5 w-5 text-white" />
-              ) : (
-                <Play className="h-5 w-5 text-white" />
-              )}
-            </button>
-            <button className="p-2 hover:bg-gray-600 rounded-lg transition-colors">
-              <Square className="h-4 w-4 text-white" />
-            </button>
-            <div className="text-white text-sm font-mono">
-              00:00 / --:--
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
