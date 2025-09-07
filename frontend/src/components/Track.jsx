@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, Volume2, VolumeX, MoreVertical, Trash2, Lock, Unlock } from 'lucide-react';
 
 const Track = ({ 
@@ -16,12 +16,14 @@ const Track = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [draggedElement, setDraggedElement] = useState(null);
+  const [resizing, setResizing] = useState(null);
+  const [dragging, setDragging] = useState(null);
 
   const handleDrop = (e) => {
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const timePosition = (x / zoom) / 10; // Convert pixel position to time
+    const timePosition = Math.max(0, (x / zoom) / 10); // Convert pixel position to time, ensure >= 0
 
     try {
       const data = JSON.parse(e.dataTransfer.getData('text/plain'));
@@ -37,6 +39,7 @@ const Track = ({
         };
         onAddElement(newElement);
       } else if (data.type === 'camera') {
+        console.log('Dropping camera element:', data);
         const newElement = {
           id: `element_${Date.now()}`,
           type: 'camera',
@@ -46,6 +49,7 @@ const Track = ({
           cameraId: data.cameraId,
           camera: data.camera
         };
+        console.log('Created camera element:', newElement);
         onAddElement(newElement);
       }
     } catch (error) {
@@ -67,8 +71,9 @@ const Track = ({
 
   const getElementColor = (type) => {
     switch (type) {
+      case 'camera': return 'bg-blue-500';
       case 'images': return 'bg-green-500';
-      case 'videos': return 'bg-blue-500';
+      case 'videos': return 'bg-purple-500';
       case 'audio': return 'bg-orange-500';
       default: return 'bg-gray-500';
     }
@@ -80,6 +85,51 @@ const Track = ({
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Handle mouse events for dragging and resizing
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (resizing) {
+        const deltaX = e.clientX - resizing.startX;
+        const deltaTime = deltaX / (10 * zoom);
+
+        if (resizing.type === 'start') {
+          // Resizing from the left (changing start time and duration)
+          const newStartTime = Math.max(0, resizing.originalStartTime + deltaTime);
+          const newDuration = Math.max(0.1, resizing.originalDuration - deltaTime);
+          onUpdateElement(resizing.element.id, { 
+            startTime: newStartTime, 
+            duration: newDuration 
+          });
+        } else if (resizing.type === 'end') {
+          // Resizing from the right (changing duration only)
+          const newDuration = Math.max(0.1, resizing.originalDuration + deltaTime);
+          onUpdateElement(resizing.element.id, { duration: newDuration });
+        }
+      }
+
+      if (dragging) {
+        const deltaX = e.clientX - dragging.startX;
+        const deltaTime = deltaX / (10 * zoom);
+        const newStartTime = Math.max(0, dragging.originalStartTime + deltaTime);
+        onUpdateElement(dragging.element.id, { startTime: newStartTime });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setResizing(null);
+      setDragging(null);
+    };
+
+    if (resizing || dragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [resizing, dragging, zoom, onUpdateElement]);
 
   return (
     <div className={`border-b border-gray-700 ${isSelected ? 'bg-gray-800' : ''}`}>
@@ -165,14 +215,14 @@ const Track = ({
                   left: `${leftPosition}px`,
                   width: `${Math.max(width, 20)}px`
                 }}
-                draggable={!isLocked}
-                onDragStart={(e) => {
-                  setDraggedElement(element);
-                  e.dataTransfer.setData('text/plain', JSON.stringify({
-                    type: 'timeline-element',
-                    element,
-                    trackId: track.id
-                  }));
+                onMouseDown={(e) => {
+                  if (!isLocked && e.target === e.currentTarget) {
+                    setDragging({
+                      element,
+                      startX: e.clientX,
+                      originalStartTime: element.startTime
+                    });
+                  }
                 }}
               >
                 {/* Element Content */}
@@ -186,9 +236,21 @@ const Track = ({
                 </div>
 
                 {/* Resize Handles */}
-                <div className="absolute left-0 top-0 w-2 h-full bg-black bg-opacity-50 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity">
+                <div 
+                  className="absolute left-0 top-0 w-2 h-full bg-black bg-opacity-50 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setResizing({ element, type: 'start', startX: e.clientX, originalStartTime: element.startTime, originalDuration: element.duration });
+                  }}
+                >
                 </div>
-                <div className="absolute right-0 top-0 w-2 h-full bg-black bg-opacity-50 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity">
+                <div 
+                  className="absolute right-0 top-0 w-2 h-full bg-black bg-opacity-50 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setResizing({ element, type: 'end', startX: e.clientX, originalDuration: element.duration });
+                  }}
+                >
                 </div>
 
                 {/* Element Controls */}

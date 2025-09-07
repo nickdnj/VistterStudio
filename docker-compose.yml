@@ -8,8 +8,12 @@ services:
       - "18554:8554" # RTSP
       - "18888:8888" # HLS
       - "15000:5000" # API
-    env_file:
-      - .env
+    environment:
+      - WB_AUTH=False
+      - WYZE_EMAIL=${WYZE_EMAIL}
+      - WYZE_PASSWORD=${WYZE_PASSWORD}
+      - API_ID=${API_ID}
+      - API_KEY=${API_KEY}
   
   vistterstudio:
     container_name: vistterstudio

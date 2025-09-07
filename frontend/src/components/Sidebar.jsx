@@ -89,6 +89,7 @@ const Sidebar = ({
                   key={cameraId}
                   draggable
                   onDragStart={(e) => {
+                    console.log('Dragging camera:', { cameraId, camera });
                     e.dataTransfer.setData('text/plain', JSON.stringify({
                       type: 'camera',
                       cameraId,

@@ -59,8 +59,22 @@ const Timeline = ({
             <span className="text-sm text-white">{Math.round(zoom * 100)}%</span>
           </div>
           
-          <div className="text-sm text-white font-mono">
-            {formatTime(currentTime)}
+          <div className="flex items-center space-x-2">
+            <div className="text-sm text-white font-mono">
+              {formatTime(currentTime)}
+            </div>
+            <button
+              onClick={() => {
+                // Find first element and jump to it
+                const firstElement = tracks.flatMap(t => t.elements).sort((a, b) => a.startTime - b.startTime)[0];
+                if (firstElement) {
+                  setCurrentTime(firstElement.startTime);
+                }
+              }}
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded"
+            >
+              Go to Start
+            </button>
           </div>
         </div>
       </div>

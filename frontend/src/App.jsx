@@ -29,7 +29,7 @@ function App() {
   
   // Layout state
   const [sidebarWidth, setSidebarWidth] = useState(320)
-  const [timelineHeight, setTimelineHeight] = useState(250)
+  const [timelineHeight, setTimelineHeight] = useState(350)
   const [isResizing, setIsResizing] = useState(false)
 
   useEffect(() => {
@@ -224,7 +224,7 @@ function App() {
   }
 
   if (error) {
-    return (
+  return (
       <div className="min-h-screen bg-darker flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -255,7 +255,7 @@ function App() {
             </div>
             <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
               <Maximize2 className="h-4 w-4 text-gray-400" />
-            </button>
+        </button>
           </div>
         </div>
       </header>
@@ -290,7 +290,7 @@ function App() {
             className="flex-1 min-h-0 flex items-center justify-center"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <div className="w-full max-w-5xl mx-auto p-4">
+            <div className="w-full max-w-3xl mx-auto p-3">
               <PreviewWindow
                 currentTime={currentTime}
                 isPlaying={isPlaying}
@@ -301,7 +301,7 @@ function App() {
                 overlays={getCurrentOverlays()}
                 getStreamUrl={getStreamUrl}
                 className="w-full"
-                style={{ maxHeight: '60vh' }}
+                style={{ maxHeight: '40vh' }}
               />
             </div>
           </div>
