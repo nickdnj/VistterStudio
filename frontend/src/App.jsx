@@ -4,6 +4,7 @@ import axios from 'axios'
 import PreviewWindow from './components/PreviewWindow'
 import Timeline from './components/Timeline'
 import Sidebar from './components/Sidebar'
+import { useTimelineEngine } from './components/TimelineEngine'
 import './App.css'
 
 // API base URL - adjust for your Docker setup
@@ -16,16 +17,16 @@ function App() {
   const [error, setError] = useState(null)
   const [assets, setAssets] = useState([])
   
-  // Timeline state
+  // Timeline state - managed by Timeline Engine
   const [tracks, setTracks] = useState([
     { id: 'main', name: 'Main Track', type: 'video', elements: [], color: 'bg-blue-600' },
     { id: 'overlay1', name: 'Overlay 1', type: 'overlay', elements: [], color: 'bg-green-600' },
     { id: 'overlay2', name: 'Overlay 2', type: 'overlay', elements: [], color: 'bg-purple-600' },
     { id: 'audio', name: 'Audio', type: 'audio', elements: [], color: 'bg-orange-600' },
   ])
-  const [currentTime, setCurrentTime] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [duration, setDuration] = useState(60) // Timeline duration in seconds
+  
+  // Initialize Timeline Engine
+  const timeline = useTimelineEngine(tracks)
   
   // Layout state
   const [sidebarWidth, setSidebarWidth] = useState(320)
@@ -36,6 +37,11 @@ function App() {
     fetchCameras()
     fetchAssets()
   }, [])
+
+  // Update Timeline Engine when tracks change
+  useEffect(() => {
+    timeline.setTracks(tracks)
+  }, [tracks, timeline])
 
   const fetchAssets = async () => {
     try {
@@ -145,59 +151,10 @@ function App() {
     setTracks(tracks.filter(track => track.id !== trackId))
   }
 
-  // Get what should be displayed in preview at current time
-  const getCurrentPreviewContent = () => {
-    // Find the main video track element at current time
-    const mainTrack = tracks.find(track => track.type === 'video' || track.id === 'main')
-    if (!mainTrack) return null
-
-    const currentElement = mainTrack.elements.find(element => 
-      currentTime >= element.startTime && 
-      currentTime < element.startTime + element.duration
-    )
-
-    if (!currentElement) return null
-
-    // If it's a camera element, return the camera stream
-    if (currentElement.type === 'camera' && cameras[currentElement.cameraId]) {
-      return {
-        type: 'camera',
-        camera: cameras[currentElement.cameraId],
-        element: currentElement
-      }
-    }
-
-    // If it's an asset (video/image), return the asset
-    if (currentElement.asset) {
-      return {
-        type: 'asset',
-        asset: currentElement.asset,
-        element: currentElement
-      }
-    }
-
-    return null
-  }
-
-  // Get overlay elements at current time
-  const getCurrentOverlays = () => {
-    const overlays = []
-    tracks.forEach(track => {
-      if (track.type === 'overlay') {
-        track.elements.forEach(element => {
-          if (currentTime >= element.startTime && 
-              currentTime < element.startTime + element.duration) {
-            overlays.push({
-              ...element,
-              trackId: track.id,
-              trackName: track.name
-            })
-          }
-        })
-      }
-    })
-    return overlays
-  }
+  // Timeline content is now handled by Timeline Engine
+  // timeline.currentContent provides the current content
+  // timeline.currentOverlays provides the current overlays  
+  // timeline.currentAudio provides the current audio
 
   // Handle resize events for panels
   const handleMouseDown = (e, type) => {
@@ -308,21 +265,25 @@ function App() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Preview Window */}
           <div 
-            className="flex-1 min-h-0 flex items-center justify-center bg-gray-900"
+            className="flex-1 min-h-0 flex items-center justify-center"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <div className="w-full max-w-4xl mx-auto">
+            <div className="w-full max-w-4xl mx-auto p-6">
               <PreviewWindow
-                currentTime={currentTime}
-                isPlaying={isPlaying}
-                setIsPlaying={setIsPlaying}
-                setCurrentTime={setCurrentTime}
-                duration={duration}
-                previewContent={getCurrentPreviewContent()}
-                overlays={getCurrentOverlays()}
+                currentTime={timeline.currentTime}
+                isPlaying={timeline.isPlaying}
+                setIsPlaying={(playing) => playing ? timeline.play() : timeline.pause()}
+                setCurrentTime={timeline.seekTo}
+                duration={timeline.duration}
+                previewContent={timeline.currentContent}
+                overlays={timeline.currentOverlays}
+                currentAudio={timeline.currentAudio}
                 getStreamUrl={getStreamUrl}
-                className="w-full shadow-2xl"
+                cameras={cameras}
+                className="w-full"
                 style={{ maxHeight: '50vh' }}
+                // Timeline Engine controls
+                timeline={timeline}
               />
             </div>
           </div>
@@ -337,14 +298,16 @@ function App() {
           <div style={{ height: timelineHeight }} className="flex-shrink-0">
             <Timeline 
               tracks={tracks}
-              currentTime={currentTime}
-              setCurrentTime={setCurrentTime}
-              duration={duration}
+              currentTime={timeline.currentTime}
+              setCurrentTime={timeline.seekTo}
+              duration={timeline.duration}
+              isPlaying={timeline.isPlaying}
               addTrack={addTrack}
               removeTrack={removeTrack}
               addElementToTrack={addElementToTrack}
               updateTrackElement={updateTrackElement}
               removeElementFromTrack={removeElementFromTrack}
+              timeline={timeline}
               className="h-full" 
             />
           </div>

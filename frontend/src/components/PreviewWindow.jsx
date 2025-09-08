@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings } from 'lucide-react';
-import VideoPlayer from './VideoPlayer';
+import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings, SkipBack, SkipForward } from 'lucide-react';
+import TimelineRenderer from './TimelineRenderer';
 
 const PreviewWindow = ({ 
   currentTime, 
@@ -9,19 +9,17 @@ const PreviewWindow = ({
   setCurrentTime,
   duration,
   previewContent, 
-  overlays, 
-  getStreamUrl, 
+  overlays,
+  currentAudio = [],
+  getStreamUrl,
+  cameras = {},
+  timeline,
   className = "" 
 }) => {
-  const [isMuted, setIsMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
-  };
-
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
   };
 
   const formatTime = (seconds) => {
@@ -46,27 +44,15 @@ const PreviewWindow = ({
           </span>
           {previewContent && (
             <span className="text-gray-400 text-sm">
-              {previewContent.type === 'camera' ? previewContent.camera.nickname : 
-               previewContent.type === 'asset' ? previewContent.asset.originalName : 'Empty'}
+              {previewContent.type === 'camera' ? 
+                cameras[previewContent.cameraId]?.nickname || 'Camera' : 
+                previewContent.asset?.originalName || 'Asset'}
             </span>
           )}
         </div>
         
         <div className="flex items-center space-x-2">
-          <button
-            onClick={toggleMute}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            {isMuted ? (
-              <VolumeX className="h-4 w-4 text-gray-400" />
-            ) : (
-              <Volume2 className="h-4 w-4 text-white" />
-            )}
-          </button>
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
+          <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
             <Maximize2 className="h-4 w-4 text-gray-400" />
           </button>
           <button className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
@@ -75,137 +61,87 @@ const PreviewWindow = ({
         </div>
       </div>
 
-      {/* Preview Content */}
+      {/* Preview Content - Timeline Renderer */}
       <div className="flex-1 bg-black rounded-b-lg overflow-hidden relative flex items-center justify-center p-2">
-        {previewContent ? (
-          <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
-            {/* Main Content */}
-            {previewContent.type === 'camera' ? (
-              previewContent.camera.product_model === 'HL_CAM4' ? (
-                // v4 cameras use WebRTC iframe
-                <iframe
-                  key={`webrtc-${previewContent.camera.mac}`}
-                  src={getStreamUrl(previewContent.camera, 'webrtc')}
-                  className="w-full h-full rounded border-0"
-                  allow="camera; microphone; autoplay"
-                />
+        <TimelineRenderer
+          currentContent={previewContent}
+          currentOverlays={overlays}
+          currentAudio={currentAudio}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          getStreamUrl={getStreamUrl}
+          cameras={cameras}
+          className="w-full h-full"
+        />
+      </div>
+
+      {/* Enhanced Playback Controls */}
+      <div className="bg-dark border-t border-gray-700 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {/* Previous Element */}
+            <button 
+              onClick={() => timeline?.jumpToPrevious()}
+              className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+              title="Previous Element"
+            >
+              <SkipBack className="h-4 w-4 text-white" />
+            </button>
+            
+            {/* Play/Pause */}
+            <button 
+              onClick={togglePlayback}
+              className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              {isPlaying ? (
+                <Pause className="h-5 w-5 text-white" />
               ) : (
-                // Legacy cameras use HLS
-                <VideoPlayer
-                  key={`camera-${previewContent.camera.mac}`}
-                  src={getStreamUrl(previewContent.camera, 'hls')}
-                  className="w-full h-full rounded"
-                  autoPlay={isPlaying}
-                  muted={isMuted}
-                />
-              )
-            ) : previewContent.type === 'asset' && previewContent.asset.category === 'videos' ? (
-              <video
-                key={`asset-${previewContent.asset.id}`}
-                src={`http://localhost:18080${previewContent.asset.url}`}
-                className="w-full h-full rounded object-contain"
-                autoPlay={isPlaying}
-                muted={isMuted}
-                loop
+                <Play className="h-5 w-5 text-white" />
+              )}
+            </button>
+            
+            {/* Stop */}
+            <button 
+              onClick={() => timeline?.stop()}
+              className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              <Square className="h-4 w-4 text-white" />
+            </button>
+            
+            {/* Next Element */}
+            <button 
+              onClick={() => timeline?.jumpToNext()}
+              className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
+              title="Next Element"
+            >
+              <SkipForward className="h-4 w-4 text-white" />
+            </button>
+            
+            {/* Timeline Scrubber */}
+            <div className="flex items-center space-x-2">
+              <span className="text-white text-xs font-mono">{formatTime(currentTime)}</span>
+              <input
+                type="range"
+                min="0"
+                max={duration}
+                value={currentTime}
+                onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
+                className="w-40 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
               />
-            ) : previewContent.type === 'asset' && previewContent.asset.category === 'images' ? (
-              <img
-                key={`asset-${previewContent.asset.id}`}
-                src={`http://localhost:18080${previewContent.asset.url}`}
-                alt={previewContent.asset.originalName}
-                className="w-full h-full rounded object-contain"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded">
-                <span className="text-gray-400">Unsupported content type</span>
-              </div>
-            )}
-
-            {/* Overlays */}
-            {overlays.map((overlay, index) => (
-              <div
-                key={`overlay-${overlay.id}`}
-                className="absolute bg-black bg-opacity-60 text-white p-2 rounded text-sm"
-                style={{
-                  top: `${20 + (index * 60)}px`,
-                  right: '20px',
-                  zIndex: 10 + index
-                }}
-              >
-                {overlay.asset ? (
-                  overlay.asset.category === 'images' ? (
-                    <div className="flex items-center space-x-2">
-                      <img
-                        src={`http://localhost:18080${overlay.asset.url}`}
-                        alt={overlay.asset.originalName}
-                        className="w-12 h-8 object-contain"
-                      />
-                      <span>{overlay.asset.originalName}</span>
-                    </div>
-                  ) : (
-                    <span>{overlay.asset.originalName}</span>
-                  )
-                ) : (
-                  <span>{overlay.name || `Overlay ${index + 1}`}</span>
-                )}
-              </div>
-            ))}
-
-            {/* Timeline Info Overlay */}
-            <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">
-              <div className="space-y-1">
-                <div>⏱️ {formatTime(currentTime)} / {formatTime(duration)}</div>
-                <div>🎬 {previewContent.element?.name || 'Timeline Element'}</div>
-                {overlays.length > 0 && (
-                  <div>📺 {overlays.length} overlay{overlays.length !== 1 ? 's' : ''}</div>
-                )}
-              </div>
-            </div>
-
-            {/* Playback Controls Overlay */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-              <div className="flex items-center space-x-3 bg-black bg-opacity-70 rounded-lg px-4 py-2">
-                <button
-                  onClick={togglePlayback}
-                  className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  {isPlaying ? (
-                    <Pause className="h-5 w-5 text-white" />
-                  ) : (
-                    <Play className="h-5 w-5 text-white" />
-                  )}
-                </button>
-                <button 
-                  onClick={() => setCurrentTime(0)}
-                  className="p-2 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  <Square className="h-4 w-4 text-white" />
-                </button>
-                
-                {/* Timeline Scrubber */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-white text-xs font-mono">{formatTime(currentTime)}</span>
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration}
-                    value={currentTime}
-                    onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
-                    className="w-32 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <span className="text-white text-xs font-mono">{formatTime(duration)}</span>
-                </div>
-              </div>
+              <span className="text-white text-xs font-mono">{formatTime(duration)}</span>
             </div>
           </div>
-        ) : (
-          <div className="text-center text-gray-400">
-            <div className="text-6xl mb-4">🎬</div>
-            <h3 className="text-xl font-semibold mb-2">Timeline Empty</h3>
-            <p>Add cameras or assets to the timeline to see preview</p>
-            <p className="text-sm mt-2">Drop items from the sidebar onto timeline tracks</p>
+          
+          {/* Right Controls */}
+          <div className="flex items-center space-x-2">
+            <button className="p-2 hover:bg-gray-600 rounded-lg transition-colors">
+              <Maximize2 className="h-4 w-4 text-gray-400" />
+            </button>
+            <button className="p-2 hover:bg-gray-600 rounded-lg transition-colors">
+              <Settings className="h-4 w-4 text-gray-400" />
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
