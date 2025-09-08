@@ -49,13 +49,23 @@ function TimelineContent({
     }
   }, [currentTime, state.currentTimeMs, actions]);
 
-  // Sync external duration with internal state  
+  // Calculate dynamic duration based on track elements
+  const calculateDynamicDuration = useCallback(() => {
+    const furthestElementEnd = Math.max(
+      ...tracks.flatMap(t => t.elements.map(e => (e.startTime + e.duration) * 1000)),
+      duration * 1000, // Use external duration as minimum
+      60000 // Minimum 1 minute for empty timeline
+    );
+    return furthestElementEnd;
+  }, [tracks, duration]);
+
+  // Sync dynamic duration with internal state  
   useEffect(() => {
-    const durationMs = duration * 1000;
-    if (Math.abs(state.totalDurationMs - durationMs) > 100) {
-      actions.setTotalDuration(durationMs);
+    const dynamicDurationMs = calculateDynamicDuration();
+    if (Math.abs(state.totalDurationMs - dynamicDurationMs) > 100) {
+      actions.setTotalDuration(dynamicDurationMs);
     }
-  }, [duration, state.totalDurationMs, actions]);
+  }, [calculateDynamicDuration, state.totalDurationMs, actions]);
 
   // Update viewport width on resize
   useEffect(() => {

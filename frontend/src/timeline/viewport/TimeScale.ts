@@ -76,7 +76,7 @@ export class TimeScale {
     
     return new TimeScale({
       msPerPx: nextMsPerPx,
-      viewStartMs: newViewStartMs,
+      viewStartMs: Math.max(0, newViewStartMs), // Clamp to prevent negative time
       contentOffsetPx: this.contentOffsetPx
     });
   }
@@ -89,7 +89,7 @@ export class TimeScale {
   panByPixels(dxPx: number): TimeScale {
     return new TimeScale({
       msPerPx: this.msPerPx,
-      viewStartMs: this.viewStartMs + dxPx * this.msPerPx,
+      viewStartMs: Math.max(0, this.viewStartMs + dxPx * this.msPerPx), // Clamp to prevent negative time
       contentOffsetPx: this.contentOffsetPx
     });
   }
@@ -102,7 +102,7 @@ export class TimeScale {
   panByTime(dtMs: number): TimeScale {
     return new TimeScale({
       msPerPx: this.msPerPx,
-      viewStartMs: this.viewStartMs + dtMs,
+      viewStartMs: Math.max(0, this.viewStartMs + dtMs), // Clamp to prevent negative time
       contentOffsetPx: this.contentOffsetPx
     });
   }

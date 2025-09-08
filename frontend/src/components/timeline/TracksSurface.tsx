@@ -96,6 +96,7 @@ function Track({
   const [isDragOver, setIsDragOver] = useState(false);
   const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
     
     // Get the drop coordinates relative to the tracks container
     const rect = event.currentTarget.getBoundingClientRect();
