@@ -26,7 +26,7 @@ const Timeline = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Calculate timeline cursor position
+  // Calculate timeline cursor position within the ruler content area
   const getCursorPosition = () => {
     if (!timelineRef.current) return 0;
     // Each time marker is 16px wide (w-16), and we have 60 markers total
@@ -34,6 +34,11 @@ const Timeline = ({
     const baseWidth = 60 * 16; // 60 time markers * 16px each
     const position = (currentTime / duration) * baseWidth * zoom;
     return Math.max(0, Math.min(position, baseWidth * zoom));
+  };
+
+  // Calculate absolute cursor position including track label offset
+  const getAbsoluteCursorPosition = () => {
+    return 192 + getCursorPosition(); // 192px = w-48 track header width
   };
 
   // Handle cursor drag start
@@ -216,7 +221,7 @@ const Timeline = ({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-30 opacity-80"
             style={{ 
-              left: `${192 + getCursorPosition()}px`, // 192px = w-48 track header width
+              left: `${getAbsoluteCursorPosition()}px`, // Absolute position including track header offset
               transform: `scaleX(${1/zoom})`, // Counter-scale to maintain cursor width
               height: '100%',
               minHeight: '200px' // Ensure minimum height
@@ -257,7 +262,7 @@ const Timeline = ({
       <div
         className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-40"
         style={{ 
-          left: `${192 + getCursorPosition()}px`, // 192px = w-48 track header width
+          left: `${getAbsoluteCursorPosition()}px`, // Absolute position including track header offset
           transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
         }}
       />

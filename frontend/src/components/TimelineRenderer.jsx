@@ -4,6 +4,7 @@ import VideoPlayer from './VideoPlayer';
 /**
  * Timeline Renderer - Renders the timeline composition in the preview
  * This component takes timeline state and renders the appropriate content
+ * Includes buffering and pre-loading for smooth stream transitions
  */
 const TimelineRenderer = ({ 
   currentContent, 
@@ -16,8 +17,24 @@ const TimelineRenderer = ({
   className = "" 
 }) => {
   const [isMuted, setIsMuted] = useState(true);
+  const [streamStates, setStreamStates] = useState({}); // Track stream loading states
+  const [preloadedStreams, setPreloadedStreams] = useState({}); // Cache for preloaded streams
   const videoRefs = useRef({});
   const audioRefs = useRef({});
+  const preloadRefs = useRef({}); // Hidden elements for preloading
+
+  // Stream state management for smooth transitions
+  useEffect(() => {
+    if (currentContent?.type === 'camera') {
+      const streamId = currentContent.cameraId;
+      const streamUrl = getStreamUrl(currentContent.camera, 'webrtc');
+      
+      // Mark stream as loading if not already cached
+      if (!preloadedStreams[streamId] && streamStates[streamId] !== 'ready') {
+        setStreamStates(prev => ({ ...prev, [streamId]: 'loading' }));
+      }
+    }
+  }, [currentContent, getStreamUrl, preloadedStreams, streamStates]);
 
   // Sync video playback with timeline time for video assets
   useEffect(() => {
@@ -28,6 +45,16 @@ const TimelineRenderer = ({
       }
     }
   }, [currentContent]);
+
+  // Handle stream loading states
+  const handleStreamReady = (streamId) => {
+    setStreamStates(prev => ({ ...prev, [streamId]: 'ready' }));
+    setPreloadedStreams(prev => ({ ...prev, [streamId]: true }));
+  };
+
+  const handleStreamError = (streamId) => {
+    setStreamStates(prev => ({ ...prev, [streamId]: 'error' }));
+  };
 
   // Handle audio elements
   useEffect(() => {
@@ -58,32 +85,74 @@ const TimelineRenderer = ({
       );
     }
 
-    // Render camera content
+    // Render camera content with buffering support
     if (currentContent.type === 'camera' && cameras[currentContent.cameraId]) {
       const camera = cameras[currentContent.cameraId];
+      const streamId = currentContent.cameraId;
+      const streamState = streamStates[streamId] || 'loading';
+      const isStreamReady = streamState === 'ready' || preloadedStreams[streamId];
       
       // Handle v4 cameras with WebRTC
       if (camera.product_model === 'HL_CAM4') {
         return (
-          <iframe
-            key={`timeline-webrtc-${camera.mac}-${currentContent.startTime}`}
-            src={getStreamUrl(camera, 'webrtc')}
-            className="w-full h-full rounded border-0"
-            allow="camera; microphone; autoplay"
-            title={`${camera.nickname} WebRTC Stream`}
-          />
+          <div className="w-full h-full relative">
+            {/* Fallback content during loading */}
+            {!isStreamReady && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 rounded z-10">
+                <div className="text-center text-gray-400">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
+                  <p className="text-sm">Loading {camera.nickname}...</p>
+                  <p className="text-xs mt-1">Camera stream starting</p>
+                </div>
+              </div>
+            )}
+            
+            {/* WebRTC Stream */}
+            <iframe
+              key={`timeline-webrtc-${camera.mac}-${currentContent.startTime}`}
+              src={getStreamUrl(camera, 'webrtc')}
+              className={`w-full h-full rounded border-0 transition-opacity duration-300 ${
+                isStreamReady ? 'opacity-100' : 'opacity-0'
+              }`}
+              allow="camera; microphone; autoplay"
+              title={`${camera.nickname} WebRTC Stream`}
+              onLoad={() => {
+                // Add delay to simulate stream startup time, then mark as ready
+                setTimeout(() => handleStreamReady(streamId), 2000);
+              }}
+              onError={() => handleStreamError(streamId)}
+            />
+          </div>
         );
       }
       
       // Handle legacy cameras with HLS
       return (
-        <VideoPlayer
-          key={`timeline-hls-${camera.mac}-${currentContent.startTime}`}
-          src={getStreamUrl(camera, 'hls')}
-          className="w-full h-full rounded"
-          autoPlay={isPlaying}
-          muted={isMuted}
-        />
+        <div className="w-full h-full relative">
+          {/* Fallback content during loading */}
+          {!isStreamReady && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 rounded z-10">
+              <div className="text-center text-gray-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
+                <p className="text-sm">Loading {camera.nickname}...</p>
+                <p className="text-xs mt-1">HLS stream starting</p>
+              </div>
+            </div>
+          )}
+          
+          {/* HLS Stream */}
+          <VideoPlayer
+            key={`timeline-hls-${camera.mac}-${currentContent.startTime}`}
+            src={getStreamUrl(camera, 'hls')}
+            className={`w-full h-full rounded transition-opacity duration-300 ${
+              isStreamReady ? 'opacity-100' : 'opacity-0'
+            }`}
+            autoPlay={isPlaying}
+            muted={isMuted}
+            onLoadStart={() => handleStreamReady(streamId)}
+            onError={() => handleStreamError(streamId)}
+          />
+        </div>
       );
     }
 
