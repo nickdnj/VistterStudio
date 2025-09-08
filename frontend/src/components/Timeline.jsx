@@ -81,7 +81,7 @@ const Timeline = ({
   }, [isDraggingCursor, duration, setCurrentTime, zoom]);
 
   return (
-    <div className={`bg-darker border-t border-gray-700 flex flex-col ${className}`}>
+    <div className={`bg-darker border-t border-gray-700 flex flex-col relative ${className}`}>
       {/* Timeline Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div className="flex items-center space-x-4">
@@ -137,13 +137,18 @@ const Timeline = ({
       </div>
 
       {/* Timeline Ruler */}
-      <div className="border-b border-gray-700 bg-gray-800 p-2 relative">
-        <div 
-          ref={timelineRef}
-          className="flex items-center space-x-2 overflow-x-auto cursor-crosshair relative"
-          onClick={handleTimelineClick}
-          style={{ transform: `scaleX(${zoom})`, transformOrigin: 'left' }}
-        >
+      <div className="border-b border-gray-700 bg-gray-800 p-2 relative flex">
+        {/* Track Labels Spacer */}
+        <div className="w-48 flex-shrink-0 border-r border-gray-700"></div>
+        
+        {/* Timeline Ruler Content */}
+        <div className="flex-1 relative">
+          <div 
+            ref={timelineRef}
+            className="flex items-center space-x-2 overflow-x-auto cursor-crosshair relative"
+            onClick={handleTimelineClick}
+            style={{ transform: `scaleX(${zoom})`, transformOrigin: 'left' }}
+          >
           {Array.from({ length: 60 }, (_, i) => (
             <div key={i} className="flex-shrink-0 text-xs text-gray-400 w-16 text-center relative">
               {formatTime(i * 10)}
@@ -158,7 +163,7 @@ const Timeline = ({
             className={`absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg cursor-ew-resize z-10 transition-opacity ${
               isDraggingCursor ? 'opacity-100' : 'opacity-80 hover:opacity-100'
             }`}
-            style={{ 
+            style={{
               left: `${getCursorPosition()}px`,
               height: '100%',
               transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
@@ -172,6 +177,7 @@ const Timeline = ({
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
               {formatTime(currentTime)}
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -196,10 +202,12 @@ const Timeline = ({
           
           {/* Extended Timeline Cursor through tracks */}
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-20 opacity-60"
+            className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-30 opacity-80"
             style={{ 
               left: `${192 + getCursorPosition()}px`, // 192px = w-48 track header width
-              transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
+              transform: `scaleX(${1/zoom})`, // Counter-scale to maintain cursor width
+              height: '100%',
+              minHeight: '200px' // Ensure minimum height
             }}
           />
         </div>
@@ -232,6 +240,15 @@ const Timeline = ({
           </div>
         </div>
       </div>
+
+      {/* Full Timeline Cursor - spans entire timeline height */}
+      <div
+        className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-40"
+        style={{ 
+          left: `${192 + getCursorPosition()}px`, // 192px = w-48 track header width
+          transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
+        }}
+      />
     </div>
   );
 };
