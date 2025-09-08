@@ -3,6 +3,7 @@ import { Monitor, Maximize2, Minimize2 } from 'lucide-react'
 import axios from 'axios'
 import PreviewWindow from './components/PreviewWindow'
 import Timeline from './components/Timeline'
+import NewTimeline from './components/timeline/NewTimeline'
 import Sidebar from './components/Sidebar'
 import { useTimelineEngine } from './components/TimelineEngine'
 import './App.css'
@@ -16,6 +17,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [assets, setAssets] = useState([])
+  const [useNewTimeline, setUseNewTimeline] = useState(true) // Toggle for testing
   
   // Timeline state - managed by Timeline Engine
   const [tracks, setTracks] = useState([
@@ -295,21 +297,46 @@ function App() {
           />
 
           {/* Timeline */}
-          <div style={{ height: timelineHeight }} className="flex-shrink-0">
-            <Timeline 
-              tracks={tracks}
-              currentTime={timeline.currentTime}
-              setCurrentTime={timeline.seekTo}
-              duration={timeline.duration}
-              isPlaying={timeline.isPlaying}
-              addTrack={addTrack}
-              removeTrack={removeTrack}
-              addElementToTrack={addElementToTrack}
-              updateTrackElement={updateTrackElement}
-              removeElementFromTrack={removeElementFromTrack}
-              timeline={timeline}
-              className="h-full" 
-            />
+          <div style={{ height: timelineHeight }} className="flex-shrink-0 relative">
+            {/* Timeline Toggle Button */}
+            <div className="absolute top-2 right-2 z-50">
+              <button
+                onClick={() => setUseNewTimeline(!useNewTimeline)}
+                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded"
+              >
+                {useNewTimeline ? 'Old Timeline' : 'New Timeline'}
+              </button>
+            </div>
+            
+            {useNewTimeline ? (
+              <NewTimeline
+                tracks={tracks}
+                currentTime={timeline.currentTime}
+                setCurrentTime={timeline.seekTo}
+                duration={timeline.duration}
+                addTrack={addTrack}
+                removeTrack={removeTrack}
+                addElementToTrack={addElementToTrack}
+                updateTrackElement={updateTrackElement}
+                removeElementFromTrack={removeElementFromTrack}
+                className="h-full"
+              />
+            ) : (
+              <Timeline 
+                tracks={tracks}
+                currentTime={timeline.currentTime}
+                setCurrentTime={timeline.seekTo}
+                duration={timeline.duration}
+                isPlaying={timeline.isPlaying}
+                addTrack={addTrack}
+                removeTrack={removeTrack}
+                addElementToTrack={addElementToTrack}
+                updateTrackElement={updateTrackElement}
+                removeElementFromTrack={removeElementFromTrack}
+                timeline={timeline}
+                className="h-full" 
+              />
+            )}
           </div>
         </div>
       </div>

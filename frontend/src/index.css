@@ -4,6 +4,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Timeline Viewport Constants */
+:root {
+  --timeline-label-col-width: 220px;
+  --timeline-ruler-height: 48px;
+  --timeline-track-height: 64px;
+  --timeline-gutter: 8px;
+  --timeline-tick-height: 16px;
+}
+
 * {
   box-sizing: border-box;
 }
