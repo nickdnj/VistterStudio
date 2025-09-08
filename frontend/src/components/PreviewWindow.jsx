@@ -76,7 +76,7 @@ const PreviewWindow = ({
       </div>
 
       {/* Preview Content */}
-      <div className="flex-1 bg-black rounded-b-lg overflow-hidden relative flex items-center justify-center">
+      <div className="flex-1 bg-black rounded-b-lg overflow-hidden relative flex items-center justify-center p-4">
         {previewContent ? (
           <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
             {/* Main Content */}

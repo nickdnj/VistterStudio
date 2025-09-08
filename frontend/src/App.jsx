@@ -311,7 +311,7 @@ function App() {
             className="flex-1 min-h-0 flex items-center justify-center"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <div className="w-full max-w-3xl mx-auto p-3">
+            <div className="w-full max-w-4xl mx-auto p-6">
               <PreviewWindow
                 currentTime={currentTime}
                 isPlaying={isPlaying}
@@ -322,7 +322,7 @@ function App() {
                 overlays={getCurrentOverlays()}
                 getStreamUrl={getStreamUrl}
                 className="w-full"
-                style={{ maxHeight: '40vh' }}
+                style={{ maxHeight: '50vh' }}
               />
             </div>
           </div>
