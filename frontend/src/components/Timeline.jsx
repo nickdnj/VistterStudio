@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Copy, Scissors, Volume2, Eye } from 'lucide-react';
 import Track from './Track';
 
@@ -16,12 +16,69 @@ const Timeline = ({
 }) => {
   const [zoom, setZoom] = useState(1);
   const [selectedElements, setSelectedElements] = useState([]);
+  const [isDraggingCursor, setIsDraggingCursor] = useState(false);
+  const timelineRef = useRef(null);
+  const cursorRef = useRef(null);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Calculate timeline cursor position
+  const getCursorPosition = () => {
+    if (!timelineRef.current) return 0;
+    // Each time marker is 16px wide (w-16), and we have 60 markers total
+    // The zoom affects the transform scale, so base position is without zoom
+    const baseWidth = 60 * 16; // 60 time markers * 16px each
+    const position = (currentTime / duration) * baseWidth * zoom;
+    return Math.max(0, Math.min(position, baseWidth * zoom));
+  };
+
+  // Handle cursor drag start
+  const handleCursorMouseDown = (e) => {
+    e.preventDefault();
+    setIsDraggingCursor(true);
+  };
+
+  // Handle timeline click to seek
+  const handleTimelineClick = (e) => {
+    if (!timelineRef.current || isDraggingCursor) return;
+    
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const rulerWidth = 60 * 16 * zoom; // Total scaled width
+    const newTime = (clickX / rulerWidth) * duration;
+    setCurrentTime(Math.max(0, Math.min(newTime, duration)));
+  };
+
+  // Handle mouse move for cursor dragging
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingCursor || !timelineRef.current) return;
+      
+      const rect = timelineRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const rulerWidth = 60 * 16 * zoom;
+      const newTime = (mouseX / rulerWidth) * duration;
+      setCurrentTime(Math.max(0, Math.min(newTime, duration)));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingCursor(false);
+    };
+
+    if (isDraggingCursor) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDraggingCursor, duration, setCurrentTime, zoom]);
 
   return (
     <div className={`bg-darker border-t border-gray-700 flex flex-col ${className}`}>
@@ -80,18 +137,47 @@ const Timeline = ({
       </div>
 
       {/* Timeline Ruler */}
-      <div className="border-b border-gray-700 bg-gray-800 p-2">
-        <div className="flex items-center space-x-2 overflow-x-auto">
+      <div className="border-b border-gray-700 bg-gray-800 p-2 relative">
+        <div 
+          ref={timelineRef}
+          className="flex items-center space-x-2 overflow-x-auto cursor-crosshair relative"
+          onClick={handleTimelineClick}
+          style={{ transform: `scaleX(${zoom})`, transformOrigin: 'left' }}
+        >
           {Array.from({ length: 60 }, (_, i) => (
-            <div key={i} className="flex-shrink-0 text-xs text-gray-400 w-16 text-center">
+            <div key={i} className="flex-shrink-0 text-xs text-gray-400 w-16 text-center relative">
               {formatTime(i * 10)}
+              {/* Tick marks */}
+              <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-px h-2 bg-gray-600"></div>
             </div>
           ))}
+          
+          {/* Timeline Cursor */}
+          <div
+            ref={cursorRef}
+            className={`absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg cursor-ew-resize z-10 transition-opacity ${
+              isDraggingCursor ? 'opacity-100' : 'opacity-80 hover:opacity-100'
+            }`}
+            style={{ 
+              left: `${getCursorPosition()}px`,
+              height: '100%',
+              transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
+            }}
+            onMouseDown={handleCursorMouseDown}
+          >
+            {/* Cursor Head */}
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-500 border-2 border-white rounded-sm shadow-md cursor-ew-resize"></div>
+            
+            {/* Time Display */}
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+              {formatTime(currentTime)}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Timeline Tracks */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto relative">
         <div className="min-h-full">
           {tracks.map((track, index) => (
             <Track
@@ -107,6 +193,15 @@ const Timeline = ({
               isSelected={selectedElements.some(el => el.trackId === track.id)}
             />
           ))}
+          
+          {/* Extended Timeline Cursor through tracks */}
+          <div
+            className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-20 opacity-60"
+            style={{ 
+              left: `${getCursorPosition()}px`,
+              transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
+            }}
+          />
         </div>
       </div>
 
