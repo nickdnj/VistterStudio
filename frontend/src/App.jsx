@@ -308,10 +308,10 @@ function App() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Preview Window */}
           <div 
-            className="flex-1 min-h-0 flex items-center justify-center"
+            className="flex-1 min-h-0 flex items-center justify-center bg-gray-900"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <div className="w-full max-w-4xl mx-auto p-6">
+            <div className="w-full max-w-4xl mx-auto">
               <PreviewWindow
                 currentTime={currentTime}
                 isPlaying={isPlaying}
@@ -321,7 +321,7 @@ function App() {
                 previewContent={getCurrentPreviewContent()}
                 overlays={getCurrentOverlays()}
                 getStreamUrl={getStreamUrl}
-                className="w-full"
+                className="w-full shadow-2xl"
                 style={{ maxHeight: '50vh' }}
               />
             </div>

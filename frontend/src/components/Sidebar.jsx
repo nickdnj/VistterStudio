@@ -97,30 +97,41 @@ const Sidebar = ({
                     }));
                   }}
                   onClick={() => onSelectCamera(cameraId)}
-                  className={`p-3 rounded-lg border cursor-move transition-all ${
-                    selectedCamera === cameraId 
-                      ? 'border-primary bg-primary bg-opacity-20' 
-                      : 'border-gray-700 hover:border-gray-600 bg-gray-800'
-                  }`}
+                  className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-move transition-colors group"
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-white font-medium text-sm">{camera.nickname}</h4>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
+                      <Camera className="h-4 w-4 text-gray-400" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white text-xs font-medium truncate">
+                        {camera.nickname}
+                      </h4>
+                      <p className="text-gray-400 text-xs">
+                        {camera.model_name} • {camera.is_2k ? '2K' : 'HD'}
+                      </p>
+                    </div>
+                    
                     <div className={`h-2 w-2 rounded-full ${
                       camera.enabled ? 'bg-green-500' : 'bg-gray-500'
                     }`}></div>
                   </div>
-                  
-                  <div className="text-xs text-gray-400 space-y-1">
-                    <div>{camera.model_name}</div>
-                    <div>{camera.ip}</div>
-                    <div className="flex items-center space-x-2">
-                      <span className={camera.is_2k ? 'text-primary' : 'text-gray-500'}>
-                        {camera.is_2k ? '2K' : 'HD'}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               ))}
+              
+              {Object.keys(cameras).length === 0 && (
+                <div className="text-center py-8">
+                  <Camera className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">No cameras found</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="text-primary text-xs hover:text-blue-400 mt-2"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
