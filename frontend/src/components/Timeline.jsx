@@ -170,11 +170,23 @@ const Timeline = ({
             }}
             onMouseDown={handleCursorMouseDown}
           >
-            {/* Cursor Head */}
-            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-500 border-2 border-white rounded-sm shadow-md cursor-ew-resize"></div>
+            {/* Cursor Head - positioned to center on the line regardless of zoom */}
+            <div 
+              className="absolute -top-1 w-3 h-3 bg-red-500 border-2 border-white rounded-sm shadow-md cursor-ew-resize"
+              style={{
+                left: '50%',
+                transform: `translateX(-50%) scaleX(${zoom})` // Counter the parent's scaleX and center properly
+              }}
+            ></div>
             
-            {/* Time Display */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+            {/* Time Display - positioned to center above the handle */}
+            <div 
+              className="absolute -top-8 bg-red-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap"
+              style={{
+                left: '50%',
+                transform: `translateX(-50%) scaleX(${zoom})` // Counter the parent's scaleX and center properly
+              }}
+            >
               {formatTime(currentTime)}
             </div>
           </div>
