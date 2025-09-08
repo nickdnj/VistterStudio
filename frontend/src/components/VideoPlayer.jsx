@@ -1,9 +1,21 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import Hls from 'hls.js';
 
-const VideoPlayer = ({ src, poster, className = "", autoPlay = true, muted = true }) => {
+const VideoPlayer = forwardRef(({ 
+  src, 
+  poster, 
+  className = "", 
+  autoPlay = true, 
+  muted = true,
+  onLoadStart = null,
+  onError = null,
+  onCanPlay = null
+}, ref) => {
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
+
+  // Expose video element to parent component
+  useImperativeHandle(ref, () => videoRef.current, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -40,6 +52,15 @@ const VideoPlayer = ({ src, poster, className = "", autoPlay = true, muted = tru
         if (autoPlay) {
           video.play().catch(console.warn);
         }
+        if (onLoadStart) {
+          onLoadStart(video);
+        }
+      });
+
+      hls.on(Hls.Events.FRAG_LOADED, () => {
+        if (onCanPlay) {
+          onCanPlay(video);
+        }
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -56,6 +77,9 @@ const VideoPlayer = ({ src, poster, className = "", autoPlay = true, muted = tru
             default:
               console.error('Fatal error, destroying HLS instance:', data);
               hls.destroy();
+              if (onError) {
+                onError(data);
+              }
               break;
           }
         }
@@ -68,8 +92,14 @@ const VideoPlayer = ({ src, poster, className = "", autoPlay = true, muted = tru
       if (autoPlay) {
         video.play().catch(console.warn);
       }
+      if (onLoadStart) {
+        onLoadStart(video);
+      }
     } else {
       console.warn('HLS not supported on this browser');
+      if (onError) {
+        onError(new Error('HLS not supported'));
+      }
     }
 
     return () => {
@@ -92,6 +122,8 @@ const VideoPlayer = ({ src, poster, className = "", autoPlay = true, muted = tru
       style={{ width: '100%', height: '100%', objectFit: 'contain' }}
     />
   );
-};
+});
+
+VideoPlayer.displayName = 'VideoPlayer';
 
 export default VideoPlayer;

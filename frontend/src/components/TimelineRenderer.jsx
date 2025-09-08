@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import VideoPlayer from './VideoPlayer';
+import CameraLoadingOverlay from './CameraLoadingOverlay';
+import thumbnailCache from '../utils/thumbnailCache';
 
 /**
  * Timeline Renderer - Renders the timeline composition in the preview
@@ -19,6 +21,8 @@ const TimelineRenderer = ({
   const [isMuted, setIsMuted] = useState(true);
   const [streamStates, setStreamStates] = useState({}); // Track stream loading states
   const [preloadedStreams, setPreloadedStreams] = useState({}); // Cache for preloaded streams
+  const [thumbnails, setThumbnails] = useState({}); // Track thumbnails for each camera
+  const [transitionDelays, setTransitionDelays] = useState({}); // Extra delay before showing live feed
   const videoRefs = useRef({});
   const audioRefs = useRef({});
   const preloadRefs = useRef({}); // Hidden elements for preloading
@@ -29,12 +33,18 @@ const TimelineRenderer = ({
       const streamId = currentContent.cameraId;
       const streamUrl = getStreamUrl(currentContent.camera, 'webrtc');
       
+      // Load cached thumbnail if available
+      const cachedThumbnail = thumbnailCache.get(streamId);
+      if (cachedThumbnail && !thumbnails[streamId]) {
+        setThumbnails(prev => ({ ...prev, [streamId]: cachedThumbnail }));
+      }
+      
       // Mark stream as loading if not already cached
       if (!preloadedStreams[streamId] && streamStates[streamId] !== 'ready') {
         setStreamStates(prev => ({ ...prev, [streamId]: 'loading' }));
       }
     }
-  }, [currentContent, getStreamUrl, preloadedStreams, streamStates]);
+  }, [currentContent, getStreamUrl, preloadedStreams, streamStates, thumbnails]);
 
   // Sync video playback with timeline time for video assets
   useEffect(() => {
@@ -46,14 +56,58 @@ const TimelineRenderer = ({
     }
   }, [currentContent]);
 
+  // Auto-capture thumbnails for HLS streams that can be captured
+  useEffect(() => {
+    const captureHLSThumbnails = async () => {
+      for (const [streamId, videoElement] of Object.entries(videoRefs.current)) {
+        if (videoElement && !thumbnails[streamId] && videoElement.videoWidth > 0) {
+          try {
+            const thumbnail = await thumbnailCache.captureFromElement(streamId, videoElement);
+            if (thumbnail) {
+              setThumbnails(prev => ({ ...prev, [streamId]: thumbnail }));
+            }
+          } catch (error) {
+            console.warn(`Failed to auto-capture thumbnail for ${streamId}:`, error);
+          }
+        }
+      }
+    };
+
+    // Run thumbnail capture periodically for any new video elements
+    const interval = setInterval(captureHLSThumbnails, 5000);
+    return () => clearInterval(interval);
+  }, [thumbnails]);
+
   // Handle stream loading states
-  const handleStreamReady = (streamId) => {
+  const handleStreamReady = async (streamId, element = null) => {
+    console.log(`Stream ${streamId} is ready`);
+    
+    // Capture thumbnail from the stream element if possible
+    if (element) {
+      try {
+        const thumbnail = await thumbnailCache.captureFromElement(streamId, element);
+        if (thumbnail) {
+          setThumbnails(prev => ({ ...prev, [streamId]: thumbnail }));
+        }
+      } catch (error) {
+        console.warn(`Failed to capture thumbnail for ${streamId}:`, error);
+      }
+    }
+    
+    // Add transition delay for smooth experience (2-3 seconds)
+    setTransitionDelays(prev => ({ ...prev, [streamId]: true }));
+    setTimeout(() => {
+      setTransitionDelays(prev => ({ ...prev, [streamId]: false }));
+    }, 2500); // 2.5 second delay
+    
     setStreamStates(prev => ({ ...prev, [streamId]: 'ready' }));
     setPreloadedStreams(prev => ({ ...prev, [streamId]: true }));
   };
 
   const handleStreamError = (streamId) => {
+    console.log(`Stream ${streamId} failed to load`);
     setStreamStates(prev => ({ ...prev, [streamId]: 'error' }));
+    setTransitionDelays(prev => ({ ...prev, [streamId]: false }));
   };
 
   // Handle audio elements
@@ -94,25 +148,25 @@ const TimelineRenderer = ({
       
       // Handle v4 cameras with WebRTC
       if (camera.product_model === 'HL_CAM4') {
+        const shouldShowLoading = !isStreamReady || transitionDelays[streamId];
+        const cameraThumb = thumbnails[streamId];
+        
         return (
           <div className="w-full h-full relative">
-            {/* Fallback content during loading */}
-            {!isStreamReady && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 rounded z-10">
-                <div className="text-center text-gray-400">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
-                  <p className="text-sm">Loading {camera.nickname}...</p>
-                  <p className="text-xs mt-1">Camera stream starting</p>
-                </div>
-              </div>
-            )}
+            {/* Enhanced Loading Overlay with Thumbnail */}
+            <CameraLoadingOverlay
+              camera={camera}
+              isLoading={shouldShowLoading}
+              thumbnail={cameraThumb}
+              streamType="webrtc"
+            />
             
             {/* WebRTC Stream */}
             <iframe
               key={`timeline-webrtc-${camera.mac}-${currentContent.startTime}`}
               src={getStreamUrl(camera, 'webrtc')}
-              className={`w-full h-full rounded border-0 transition-opacity duration-300 ${
-                isStreamReady ? 'opacity-100' : 'opacity-0'
+              className={`w-full h-full rounded border-0 transition-opacity duration-500 ${
+                shouldShowLoading ? 'opacity-0' : 'opacity-100'
               }`}
               allow="camera; microphone; autoplay"
               title={`${camera.nickname} WebRTC Stream`}
@@ -127,30 +181,38 @@ const TimelineRenderer = ({
       }
       
       // Handle legacy cameras with HLS
+      const shouldShowLoading = !isStreamReady || transitionDelays[streamId];
+      const cameraThumb = thumbnails[streamId];
+      
       return (
         <div className="w-full h-full relative">
-          {/* Fallback content during loading */}
-          {!isStreamReady && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-900 rounded z-10">
-              <div className="text-center text-gray-400">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
-                <p className="text-sm">Loading {camera.nickname}...</p>
-                <p className="text-xs mt-1">HLS stream starting</p>
-              </div>
-            </div>
-          )}
+          {/* Enhanced Loading Overlay with Thumbnail */}
+          <CameraLoadingOverlay
+            camera={camera}
+            isLoading={shouldShowLoading}
+            thumbnail={cameraThumb}
+            streamType="hls"
+          />
           
           {/* HLS Stream */}
           <VideoPlayer
             key={`timeline-hls-${camera.mac}-${currentContent.startTime}`}
             src={getStreamUrl(camera, 'hls')}
-            className={`w-full h-full rounded transition-opacity duration-300 ${
-              isStreamReady ? 'opacity-100' : 'opacity-0'
+            className={`w-full h-full rounded transition-opacity duration-500 ${
+              shouldShowLoading ? 'opacity-0' : 'opacity-100'
             }`}
             autoPlay={isPlaying}
             muted={isMuted}
-            onLoadStart={() => handleStreamReady(streamId)}
+            onLoadStart={(videoElement) => {
+              // Pass the video element for thumbnail capture
+              handleStreamReady(streamId, videoElement);
+            }}
             onError={() => handleStreamError(streamId)}
+            ref={(videoElement) => {
+              if (videoElement) {
+                videoRefs.current[streamId] = videoElement;
+              }
+            }}
           />
         </div>
       );

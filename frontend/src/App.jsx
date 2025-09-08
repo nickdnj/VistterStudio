@@ -107,6 +107,7 @@ function App() {
 
   // Timeline management functions
   const addElementToTrack = (trackId, element) => {
+    console.log('addElementToTrack called:', { trackId, element, currentTracks: tracks.length });
     setTracks(tracks.map(track => 
       track.id === trackId 
         ? { ...track, elements: [...track.elements, element] }

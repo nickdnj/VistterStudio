@@ -102,8 +102,10 @@ function Track({
     const rect = event.currentTarget.getBoundingClientRect();
     const dropX = event.clientX - rect.left;
     
-    // Convert pixel position to time using TimeScale (add content offset back)
-    const dropTimeMs = timeScale.tOf(dropX + timeScale.contentOffsetPx);
+    // Convert pixel position to time using TimeScale
+    // In the new timeline, dropX is relative to the tracks content area (after labels)
+    // We DON'T need to add contentOffsetPx because the CSS grid already handles the offset
+    const dropTimeMs = timeScale.tOf(dropX);
     const dropTimeSeconds = Math.max(0, dropTimeMs / 1000);
     
     console.log('Drop event:', {
