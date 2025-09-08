@@ -2,12 +2,15 @@ services:
   wyze-bridge:
     container_name: wyze-bridge
     restart: unless-stopped
-    image: mrlt8/wyze-bridge:latest
+    build:
+      context: ./wyze-bridge-v4fix
+      dockerfile: docker/Dockerfile
     ports:
       - "11935:1935" # RTMP
-      - "18554:8554" # RTSP
-      - "18888:8888" # HLS
-      - "15000:5000" # API
+      - "18555:8555" # RTSP (v4fix uses 8555)
+      - "18889:8889" # HLS (v4fix uses 8889)
+      - "18890:8890" # WebRTC (new for v4 cameras)
+      - "15001:5000" # API (bridge runs on 5000 internally)
     environment:
       - WB_AUTH=False
       - WYZE_EMAIL=${WYZE_EMAIL}

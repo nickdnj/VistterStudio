@@ -81,13 +81,24 @@ const PreviewWindow = ({
           <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
             {/* Main Content */}
             {previewContent.type === 'camera' ? (
-              <VideoPlayer
-                key={`camera-${previewContent.camera.mac}`}
-                src={getStreamUrl(previewContent.camera, 'hls')}
-                className="w-full h-full rounded"
-                autoPlay={isPlaying}
-                muted={isMuted}
-              />
+              previewContent.camera.product_model === 'HL_CAM4' ? (
+                // v4 cameras use WebRTC iframe
+                <iframe
+                  key={`webrtc-${previewContent.camera.mac}`}
+                  src={getStreamUrl(previewContent.camera, 'webrtc')}
+                  className="w-full h-full rounded border-0"
+                  allow="camera; microphone; autoplay"
+                />
+              ) : (
+                // Legacy cameras use HLS
+                <VideoPlayer
+                  key={`camera-${previewContent.camera.mac}`}
+                  src={getStreamUrl(previewContent.camera, 'hls')}
+                  className="w-full h-full rounded"
+                  autoPlay={isPlaying}
+                  muted={isMuted}
+                />
+              )
             ) : previewContent.type === 'asset' && previewContent.asset.category === 'videos' ? (
               <video
                 key={`asset-${previewContent.asset.id}`}

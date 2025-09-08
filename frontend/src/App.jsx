@@ -68,12 +68,33 @@ function App() {
   const getStreamUrl = (camera, type = 'hls') => {
     if (!camera) return ''
     
-    // Convert internal URLs to external accessible URLs
+    // Check if this is a v4 camera that needs WebRTC
+    const isV4Camera = camera.product_model === 'HL_CAM4'
+    
+    if (isV4Camera && type === 'webrtc') {
+      // v4 cameras use WebRTC endpoints
+      return `http://localhost:15001/webrtc/${camera.name_uri}`
+    }
+    
+    // Convert internal URLs to external accessible URLs for v4fix bridge
     const url = camera[`${type}_url`] || ''
     return url.replace('wyze-bridge:', 'localhost:')
-      .replace(':8888', ':18888')
-      .replace(':8554', ':18554')
-      .replace(':1935', ':11935')
+      .replace(':8889', ':18889') // HLS port for v4fix
+      .replace(':8555', ':18555') // RTSP port for v4fix  
+      .replace(':1935', ':11935') // RTMP port unchanged
+  }
+
+  // Get the appropriate stream type for camera
+  const getStreamType = (camera) => {
+    if (!camera) return 'hls'
+    
+    // v4 cameras should use WebRTC when available
+    if (camera.product_model === 'HL_CAM4') {
+      return 'webrtc'
+    }
+    
+    // Legacy cameras use HLS/RTSP
+    return 'hls'
   }
 
   // Timeline management functions

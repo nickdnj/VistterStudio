@@ -63,7 +63,7 @@ const upload = multer({
 // Serve static assets
 app.use('/assets', express.static(ASSETS_DIR));
 
-// The URL for the Wyze Bridge container
+// The URL for the Wyze Bridge container (v4fix version)
 const WYZE_BRIDGE_URL = 'http://wyze-bridge:5000';
 const WYZE_BRIDGE_API_KEY = 'D-hNZigAPnrotiyn5_-zbzJyfMjLJpDlRrxKF-xQ';
 
