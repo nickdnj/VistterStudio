@@ -26,7 +26,7 @@ interface TrackElementProps {
 function TrackElement({ element, timeScale, onUpdate, onRemove }: TrackElementProps) {
   const startMs = element.startTime * 1000;
   const durationMs = element.duration * 1000;
-  const leftPx = timeScale.xOf(startMs);
+  const leftPx = timeScale.xOf(startMs) - timeScale.contentOffsetPx; // Remove content offset for grid positioning
   const widthPx = timeScale.durationToPx(durationMs);
 
   const getElementIcon = () => {
@@ -101,8 +101,8 @@ function Track({
     const rect = event.currentTarget.getBoundingClientRect();
     const dropX = event.clientX - rect.left;
     
-    // Convert pixel position to time using TimeScale
-    const dropTimeMs = timeScale.tOf(dropX);
+    // Convert pixel position to time using TimeScale (add content offset back)
+    const dropTimeMs = timeScale.tOf(dropX + timeScale.contentOffsetPx);
     const dropTimeSeconds = Math.max(0, dropTimeMs / 1000);
     
     console.log('Drop event:', {
@@ -224,7 +224,7 @@ export default function TracksSurface({
       
       for (let timeMs = startLine; timeMs <= endLine; timeMs += interval) {
         if (timeMs >= viewStartMs && timeMs <= viewEndMs) {
-          lines.push(timeScale.xOf(timeMs));
+          lines.push(timeScale.xOf(timeMs) - timeScale.contentOffsetPx); // Remove content offset for grid positioning
         }
       }
     }

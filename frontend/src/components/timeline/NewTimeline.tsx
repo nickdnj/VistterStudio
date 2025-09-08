@@ -142,7 +142,7 @@ function TimelineContent({
         <div className="bg-gray-800 border-r border-gray-700" />
         
         {/* Timeline Ruler */}
-        <div className="relative bg-gray-800 border-r border-gray-700 overflow-hidden">
+        <div className="relative bg-gray-800 overflow-hidden">
           <HeaderRuler />
           <Playhead onScrub={handleTimeChange} />
         </div>

@@ -88,7 +88,7 @@ export default function HeaderRuler({ className = '' }: HeaderRulerProps) {
       viewStartMs,
       viewEndMs,
       timeScale.msPerPx,
-      (timeMs) => timeScale.xOf(timeMs)
+      (timeMs) => timeScale.xOf(timeMs) - timeScale.contentOffsetPx // Remove content offset since grid handles positioning
     ),
     [viewStartMs, viewEndMs, timeScale]
   );

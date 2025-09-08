@@ -22,8 +22,8 @@ export default function Playhead({ className = '', onScrub }: PlayheadProps) {
   const playheadRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
 
-  // Calculate playhead position
-  const playheadX = timeScale.xOf(currentTimeMs);
+  // Calculate playhead position (remove content offset since grid handles positioning)
+  const playheadX = timeScale.xOf(currentTimeMs) - timeScale.contentOffsetPx;
 
   // Handle mouse/touch events with rAF throttling
   const handlePointerMove = useCallback((event: PointerEvent) => {
@@ -97,7 +97,8 @@ export default function Playhead({ className = '', onScrub }: PlayheadProps) {
     if (event.target === event.currentTarget) {
       const rect = event.currentTarget.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
-      const clickTime = timeScale.tOf(clickX);
+      // Add content offset back for time calculation since we're in the grid content area
+      const clickTime = timeScale.tOf(clickX + timeScale.contentOffsetPx);
       const clampedTime = Math.max(0, Math.min(totalDurationMs, clickTime));
       actions.setCurrentTime(clampedTime);
     }
