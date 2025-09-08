@@ -198,7 +198,7 @@ const Timeline = ({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-lg pointer-events-none z-20 opacity-60"
             style={{ 
-              left: `${getCursorPosition()}px`,
+              left: `${192 + getCursorPosition()}px`, // 192px = w-48 track header width
               transform: `scaleX(${1/zoom})` // Counter-scale to maintain cursor width
             }}
           />
