@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import { Monitor, Maximize2, Minimize2 } from 'lucide-react'
 import axios from 'axios'
 import PreviewWindow from './components/PreviewWindow'
-import Timeline from './components/Timeline'
-import NewTimeline from './components/timeline/NewTimeline'
+import { Timeline } from './timeline'
+import { useTimelinePreview } from './timeline'
 import Sidebar from './components/Sidebar'
-import { useTimelineEngine } from './components/TimelineEngine'
 import './App.css'
 
 // API base URL - adjust for your Docker setup
@@ -17,18 +16,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [assets, setAssets] = useState([])
-  const [useNewTimeline, setUseNewTimeline] = useState(true) // Toggle for testing
   
-  // Timeline state - managed by Timeline Engine
-  const [tracks, setTracks] = useState([
-    { id: 'main', name: 'Main Track', type: 'video', elements: [], color: 'bg-blue-600' },
-    { id: 'overlay1', name: 'Overlay 1', type: 'overlay', elements: [], color: 'bg-green-600' },
-    { id: 'overlay2', name: 'Overlay 2', type: 'overlay', elements: [], color: 'bg-purple-600' },
-    { id: 'audio', name: 'Audio', type: 'audio', elements: [], color: 'bg-orange-600' },
-  ])
-  
-  // Initialize Timeline Engine
-  const timeline = useTimelineEngine(tracks)
+  // Legacy state removed - now handled by timeline store
   
   // Layout state
   const [sidebarWidth, setSidebarWidth] = useState(320)
@@ -39,11 +28,6 @@ function App() {
     fetchCameras()
     fetchAssets()
   }, [])
-
-  // Update Timeline Engine when tracks change
-  useEffect(() => {
-    timeline.setTracks(tracks)
-  }, [tracks, timeline])
 
   const fetchAssets = async () => {
     try {
@@ -105,59 +89,8 @@ function App() {
     return 'hls'
   }
 
-  // Timeline management functions
-  const addElementToTrack = (trackId, element) => {
-    console.log('addElementToTrack called:', { trackId, element, currentTracks: tracks.length });
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { ...track, elements: [...track.elements, element] }
-        : track
-    ))
-  }
-
-  const updateTrackElement = (trackId, elementId, updates) => {
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { 
-            ...track, 
-            elements: track.elements.map(el => 
-              el.id === elementId ? { ...el, ...updates } : el
-            )
-          }
-        : track
-    ))
-  }
-
-  const removeElementFromTrack = (trackId, elementId) => {
-    setTracks(tracks.map(track => 
-      track.id === trackId 
-        ? { ...track, elements: track.elements.filter(el => el.id !== elementId) }
-        : track
-    ))
-  }
-
-  const addTrack = (type = 'overlay') => {
-    const newTrack = {
-      id: `${type}_${Date.now()}`,
-      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${tracks.filter(t => t.type === type).length + 1}`,
-      type,
-      elements: [],
-      color: type === 'video' ? 'bg-blue-600' :
-             type === 'overlay' ? 'bg-green-600' :
-             type === 'audio' ? 'bg-orange-600' : 'bg-gray-600'
-    }
-    setTracks([...tracks, newTrack])
-  }
-
-  const removeTrack = (trackId) => {
-    if (tracks.length <= 1) return // Keep at least one track
-    setTracks(tracks.filter(track => track.id !== trackId))
-  }
-
-  // Timeline content is now handled by Timeline Engine
-  // timeline.currentContent provides the current content
-  // timeline.currentOverlays provides the current overlays  
-  // timeline.currentAudio provides the current audio
+  // Get timeline preview data using the new timeline system
+  const { previewContent, overlays } = useTimelinePreview(cameras, getStreamUrl)
 
   // Handle resize events for panels
   const handleMouseDown = (e, type) => {
@@ -268,25 +201,16 @@ function App() {
         <div className="flex-1 flex flex-col min-w-0">
           {/* Preview Window */}
           <div 
-            className="flex-1 min-h-0 flex items-center justify-center"
+            className="flex-1 min-h-0 flex items-center justify-center bg-gray-900"
             style={{ height: `calc(100% - ${timelineHeight}px)` }}
           >
-            <div className="w-full max-w-4xl mx-auto p-6">
+            <div className="w-full max-w-4xl mx-auto">
               <PreviewWindow
-                currentTime={timeline.currentTime}
-                isPlaying={timeline.isPlaying}
-                setIsPlaying={(playing) => playing ? timeline.play() : timeline.pause()}
-                setCurrentTime={timeline.seekTo}
-                duration={timeline.duration}
-                previewContent={timeline.currentContent}
-                overlays={timeline.currentOverlays}
-                currentAudio={timeline.currentAudio}
+                previewContent={previewContent}
+                overlays={overlays}
                 getStreamUrl={getStreamUrl}
-                cameras={cameras}
-                className="w-full"
+                className="w-full shadow-2xl"
                 style={{ maxHeight: '50vh' }}
-                // Timeline Engine controls
-                timeline={timeline}
               />
             </div>
           </div>
@@ -298,46 +222,8 @@ function App() {
           />
 
           {/* Timeline */}
-          <div style={{ height: timelineHeight }} className="flex-shrink-0 relative">
-            {/* Timeline Toggle Button */}
-            <div className="absolute top-2 right-2 z-50">
-              <button
-                onClick={() => setUseNewTimeline(!useNewTimeline)}
-                className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded"
-              >
-                {useNewTimeline ? 'Old Timeline' : 'New Timeline'}
-              </button>
-            </div>
-            
-            {useNewTimeline ? (
-              <NewTimeline
-                tracks={tracks}
-                currentTime={timeline.currentTime}
-                setCurrentTime={timeline.seekTo}
-                duration={timeline.duration}
-                addTrack={addTrack}
-                removeTrack={removeTrack}
-                addElementToTrack={addElementToTrack}
-                updateTrackElement={updateTrackElement}
-                removeElementFromTrack={removeElementFromTrack}
-                className="h-full"
-              />
-            ) : (
-              <Timeline 
-                tracks={tracks}
-                currentTime={timeline.currentTime}
-                setCurrentTime={timeline.seekTo}
-                duration={timeline.duration}
-                isPlaying={timeline.isPlaying}
-                addTrack={addTrack}
-                removeTrack={removeTrack}
-                addElementToTrack={addElementToTrack}
-                updateTrackElement={updateTrackElement}
-                removeElementFromTrack={removeElementFromTrack}
-                timeline={timeline}
-                className="h-full" 
-              />
-            )}
+          <div style={{ height: timelineHeight }} className="flex-shrink-0">
+            <Timeline className="h-full" />
           </div>
         </div>
       </div>
