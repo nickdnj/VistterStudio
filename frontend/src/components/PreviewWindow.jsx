@@ -1,23 +1,34 @@
 import { useState } from 'react';
 import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings } from 'lucide-react';
+import { useTimelineStore } from '../timeline';
+import { TimeFormatter } from '../timeline';
 import VideoPlayer from './VideoPlayer';
 
 const PreviewWindow = ({ 
-  currentTime, 
-  isPlaying, 
-  setIsPlaying, 
-  setCurrentTime,
-  duration,
   previewContent, 
   overlays, 
   getStreamUrl, 
   className = "" 
 }) => {
+  // Get timeline state from store
+  const { 
+    currentTimeMs, 
+    isPlaying, 
+    play, 
+    pause, 
+    setCurrentTime 
+  } = useTimelineStore();
+  
+  const currentTime = currentTimeMs / 1000; // Convert to seconds for compatibility
   const [isMuted, setIsMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const togglePlayback = () => {
-    setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      pause();
+    } else {
+      play();
+    }
   };
 
   const toggleMute = () => {
@@ -154,7 +165,7 @@ const PreviewWindow = ({
             {/* Timeline Info Overlay */}
             <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">
               <div className="space-y-1">
-                <div>⏱️ {formatTime(currentTime)} / {formatTime(duration)}</div>
+                <div>⏱️ {TimeFormatter.formatTime(currentTimeMs)} / 10:00</div>
                 <div>🎬 {previewContent.element?.name || 'Timeline Element'}</div>
                 {overlays.length > 0 && (
                   <div>📺 {overlays.length} overlay{overlays.length !== 1 ? 's' : ''}</div>
@@ -184,16 +195,16 @@ const PreviewWindow = ({
                 
                 {/* Timeline Scrubber */}
                 <div className="flex items-center space-x-2">
-                  <span className="text-white text-xs font-mono">{formatTime(currentTime)}</span>
+                  <span className="text-white text-xs font-mono">{TimeFormatter.formatTime(currentTimeMs)}</span>
                   <input
                     type="range"
                     min="0"
-                    max={duration}
-                    value={currentTime}
+                    max={600000} // 10 minutes in ms
+                    value={currentTimeMs}
                     onChange={(e) => setCurrentTime(parseFloat(e.target.value))}
                     className="w-32 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
                   />
-                  <span className="text-white text-xs font-mono">{formatTime(duration)}</span>
+                  <span className="text-white text-xs font-mono">10:00</span>
                 </div>
               </div>
             </div>
