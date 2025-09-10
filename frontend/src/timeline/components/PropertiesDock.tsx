@@ -10,10 +10,33 @@ import {
 } from 'lucide-react';
 import { useTimelineStore } from '../state/store';
 import { TimeFormatter } from '../models/TimeScale';
+import { TransitionType } from '../models/types';
 
 interface PropertiesDockProps {
   className?: string;
 }
+
+// Helper function to get transition type display names
+const getTransitionTypeLabel = (type: TransitionType): string => {
+  switch (type) {
+    case 'none': return 'None';
+    case 'fade': return 'Fade';
+    case 'slide-left': return 'Slide Left';
+    case 'slide-right': return 'Slide Right';
+    case 'slide-up': return 'Slide Up';
+    case 'slide-down': return 'Slide Down';
+    case 'scale-in': return 'Scale In';
+    case 'scale-out': return 'Scale Out';
+    case 'zoom-in': return 'Zoom In';
+    case 'zoom-out': return 'Zoom Out';
+    default: return type;
+  }
+};
+
+const transitionTypes: TransitionType[] = [
+  'none', 'fade', 'slide-left', 'slide-right', 'slide-up', 'slide-down',
+  'scale-in', 'scale-out', 'zoom-in', 'zoom-out'
+];
 
 export const PropertiesDock: React.FC<PropertiesDockProps> = ({ className = '' }) => {
   const {
@@ -68,6 +91,49 @@ export const PropertiesDock: React.FC<PropertiesDockProps> = ({ className = '' }
     const opacity = parseFloat(value);
     if (!isNaN(opacity) && opacity >= 0 && opacity <= 100) {
       updateClip(selectedClip.id, { opacity });
+    }
+  };
+
+  const handleScaleChange = (value: string) => {
+    const scale = parseFloat(value);
+    if (!isNaN(scale) && scale >= 10 && scale <= 200) {
+      updateClip(selectedClip.id, { scale });
+    }
+  };
+
+  const handlePositionXChange = (value: string) => {
+    const positionX = parseFloat(value);
+    if (!isNaN(positionX) && positionX >= -100 && positionX <= 100) {
+      updateClip(selectedClip.id, { positionX });
+    }
+  };
+
+  const handlePositionYChange = (value: string) => {
+    const positionY = parseFloat(value);
+    if (!isNaN(positionY) && positionY >= -100 && positionY <= 100) {
+      updateClip(selectedClip.id, { positionY });
+    }
+  };
+
+  const handleTransitionInTypeChange = (value: TransitionType) => {
+    updateClip(selectedClip.id, { transitionInType: value });
+  };
+
+  const handleTransitionInDurationChange = (value: string) => {
+    const duration = parseFloat(value) * 1000; // Convert to ms
+    if (!isNaN(duration) && duration >= 0 && duration <= 5000) {
+      updateClip(selectedClip.id, { transitionInDuration: duration });
+    }
+  };
+
+  const handleTransitionOutTypeChange = (value: TransitionType) => {
+    updateClip(selectedClip.id, { transitionOutType: value });
+  };
+
+  const handleTransitionOutDurationChange = (value: string) => {
+    const duration = parseFloat(value) * 1000; // Convert to ms
+    if (!isNaN(duration) && duration >= 0 && duration <= 5000) {
+      updateClip(selectedClip.id, { transitionOutDuration: duration });
     }
   };
 
@@ -236,6 +302,179 @@ export const PropertiesDock: React.FC<PropertiesDockProps> = ({ className = '' }
                 <span className="text-xs text-gray-400">%</span>
               </div>
             </div>
+
+            {/* Scale - Only for overlay clips */}
+            {selectedTrack?.kind === 'overlay' && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Scale</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="range"
+                    min="10"
+                    max="200"
+                    value={selectedClip.scale || 100}
+                    onChange={(e) => handleScaleChange(e.target.value)}
+                    className="flex-1"
+                  />
+                  <input
+                    type="number"
+                    value={selectedClip.scale || 100}
+                    onChange={(e) => handleScaleChange(e.target.value)}
+                    min="10"
+                    max="200"
+                    className="w-12 bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </div>
+              </div>
+            )}
+
+            {/* Position X - Only for overlay clips */}
+            {selectedTrack?.kind === 'overlay' && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Position X</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    value={selectedClip.positionX || 0}
+                    onChange={(e) => handlePositionXChange(e.target.value)}
+                    className="flex-1"
+                  />
+                  <input
+                    type="number"
+                    value={selectedClip.positionX || 0}
+                    onChange={(e) => handlePositionXChange(e.target.value)}
+                    min="-100"
+                    max="100"
+                    className="w-12 bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  -100 = Left, 0 = Center, 100 = Right
+                </div>
+              </div>
+            )}
+
+            {/* Position Y - Only for overlay clips */}
+            {selectedTrack?.kind === 'overlay' && (
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Position Y</label>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="range"
+                    min="-100"
+                    max="100"
+                    value={selectedClip.positionY || 0}
+                    onChange={(e) => handlePositionYChange(e.target.value)}
+                    className="flex-1"
+                  />
+                  <input
+                    type="number"
+                    value={selectedClip.positionY || 0}
+                    onChange={(e) => handlePositionYChange(e.target.value)}
+                    min="-100"
+                    max="100"
+                    className="w-12 bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  -100 = Top, 0 = Center, 100 = Bottom
+                </div>
+              </div>
+            )}
+
+            {/* Transitions - Only for overlay clips */}
+            {selectedTrack?.kind === 'overlay' && (
+              <>
+                {/* Transition In */}
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Transition In</label>
+                  <div className="space-y-2">
+                    <select
+                      value={selectedClip.transitionInType || 'fade'}
+                      onChange={(e) => handleTransitionInTypeChange(e.target.value as TransitionType)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                    >
+                      {transitionTypes.map(type => (
+                        <option key={type} value={type}>
+                          {getTransitionTypeLabel(type)}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {selectedClip.transitionInType !== 'none' && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={(selectedClip.transitionInDuration || 500) / 1000}
+                          onChange={(e) => handleTransitionInDurationChange(e.target.value)}
+                          className="flex-1"
+                        />
+                        <input
+                          type="number"
+                          value={((selectedClip.transitionInDuration || 500) / 1000).toFixed(1)}
+                          onChange={(e) => handleTransitionInDurationChange(e.target.value)}
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          className="w-12 bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs"
+                        />
+                        <span className="text-xs text-gray-400">s</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Transition Out */}
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1">Transition Out</label>
+                  <div className="space-y-2">
+                    <select
+                      value={selectedClip.transitionOutType || 'fade'}
+                      onChange={(e) => handleTransitionOutTypeChange(e.target.value as TransitionType)}
+                      className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-xs"
+                    >
+                      {transitionTypes.map(type => (
+                        <option key={type} value={type}>
+                          {getTransitionTypeLabel(type)}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {selectedClip.transitionOutType !== 'none' && (
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="range"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          value={(selectedClip.transitionOutDuration || 500) / 1000}
+                          onChange={(e) => handleTransitionOutDurationChange(e.target.value)}
+                          className="flex-1"
+                        />
+                        <input
+                          type="number"
+                          value={((selectedClip.transitionOutDuration || 500) / 1000).toFixed(1)}
+                          onChange={(e) => handleTransitionOutDurationChange(e.target.value)}
+                          min="0"
+                          max="5"
+                          step="0.1"
+                          className="w-12 bg-gray-700 border border-gray-600 rounded px-1 py-1 text-white text-xs"
+                        />
+                        <span className="text-xs text-gray-400">s</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Name */}
             <div>

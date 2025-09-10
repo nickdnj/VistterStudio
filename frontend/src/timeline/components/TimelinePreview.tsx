@@ -92,7 +92,7 @@ export const useTimelinePreview = (
   cameras: Record<string, any>,
   getStreamUrl: (camera: any, type: string) => string
 ) => {
-  const { currentTimeMs, tracks, getClipsAtTime } = useTimelineStore();
+  const { currentTimeMs, tracks, clips, getClipsAtTime } = useTimelineStore();
 
   return useMemo(() => {
     const activeClips = getClipsAtTime(currentTimeMs);
@@ -144,5 +144,5 @@ export const useTimelinePreview = (
       previewContent,
       overlays,
     };
-  }, [currentTimeMs, tracks, cameras, getClipsAtTime]);
+  }, [currentTimeMs, tracks, clips, cameras, getClipsAtTime]);
 };

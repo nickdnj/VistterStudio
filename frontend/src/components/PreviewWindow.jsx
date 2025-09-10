@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings } from 'lucide-react';
 import { useTimelineStore } from '../timeline';
 import { TimeFormatter } from '../timeline';
+import { calculateTransitionState } from '../timeline/utils/transitions';
 import VideoPlayer from './VideoPlayer';
 
 const PreviewWindow = ({ 
@@ -135,17 +136,54 @@ const PreviewWindow = ({
             {/* Overlays - Render image assets as full-size overlays */}
             {overlays
               .filter(overlay => overlay.asset?.category === 'images')
-              .map((overlay, index) => (
-                <img
-                  key={`overlay-${overlay.id}`}
-                  src={`http://localhost:18080${overlay.asset.url}`}
-                  alt={overlay.asset.originalName}
-                  className="absolute top-0 left-0 w-full h-full object-contain rounded"
-                  style={{
-                    zIndex: 10 + index
-                  }}
-                />
-              ))}
+              .map((overlay, index) => {
+                // Get base visual properties with defaults
+                const baseOpacity = (overlay.opacity || 100) / 100;
+                const baseScale = (overlay.scale || 100) / 100;
+                const basePositionX = overlay.positionX || 0;
+                const basePositionY = overlay.positionY || 0;
+
+                // Calculate base transform values
+                const baseTranslateX = basePositionX * 0.5; // Convert -100/100 to -50%/50%
+                const baseTranslateY = basePositionY * 0.5; // Convert -100/100 to -50%/50%
+
+                // Calculate transition state
+                const transitionState = calculateTransitionState(
+                  overlay,
+                  currentTime * 1000, // Convert to milliseconds
+                  baseOpacity,
+                  baseScale,
+                  baseTranslateX,
+                  baseTranslateY
+                );
+
+                // Apply transition state
+                const finalOpacity = transitionState.opacity;
+                const finalScale = transitionState.scale;
+                const finalTranslateX = transitionState.translateX;
+                const finalTranslateY = transitionState.translateY;
+
+                // Don't render if completely transparent
+                if (finalOpacity <= 0) {
+                  return null;
+                }
+
+                return (
+                  <img
+                    key={`overlay-${overlay.id}`}
+                    src={`http://localhost:18080${overlay.asset.url}`}
+                    alt={overlay.asset.originalName}
+                    className="absolute top-1/2 left-1/2 object-contain rounded transition-all duration-100 ease-out"
+                    style={{
+                      opacity: finalOpacity,
+                      transform: `translate(-50%, -50%) translate(${finalTranslateX}%, ${finalTranslateY}%) scale(${finalScale})`,
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      zIndex: 10 + index
+                    }}
+                  />
+                );
+              })}
 
             {/* Non-image overlays as info boxes */}
             {overlays

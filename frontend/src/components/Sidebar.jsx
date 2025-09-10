@@ -150,8 +150,8 @@ const Sidebar = ({
               </button>
             </div>
             
-            <div className="space-y-2">
-              {assets.slice(0, 10).map((asset) => {
+             <div className="space-y-2 max-h-96 overflow-y-auto">
+               {assets.map((asset) => {
                 const Icon = getAssetIcon(asset.category);
                 return (
                   <div

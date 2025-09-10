@@ -234,6 +234,13 @@ export const useTimelineStore = create<TimelineState>()(
       const newClip: Clip = {
         id: `clip_${Date.now()}`,
         opacity: 100,
+        scale: 100,
+        positionX: 0,
+        positionY: 0,
+        transitionInType: 'fade',
+        transitionInDuration: 500,
+        transitionOutType: 'fade',
+        transitionOutDuration: 500,
         enabled: true,
         ...clipData,
       };

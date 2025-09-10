@@ -24,6 +24,17 @@ export interface Clip {
   enabled?: boolean;
   name?: string;
   
+  // Visual properties for overlays
+  scale?: number; // 0-200, default 100
+  positionX?: number; // -100 to 100, default 0 (center)
+  positionY?: number; // -100 to 100, default 0 (center)
+  
+  // Transition properties
+  transitionInType?: TransitionType;
+  transitionInDuration?: number; // in milliseconds, default 500
+  transitionOutType?: TransitionType;
+  transitionOutDuration?: number; // in milliseconds, default 500
+  
   // Legacy compatibility fields
   cameraId?: string;
   camera?: any;
@@ -59,6 +70,19 @@ export interface DropData {
 
 // Playback rates
 export type PlaybackRate = 0.5 | 1 | 2;
+
+// Transition types for overlays
+export type TransitionType = 
+  | 'none'
+  | 'fade'
+  | 'slide-left'
+  | 'slide-right'
+  | 'slide-up'
+  | 'slide-down'
+  | 'scale-in'
+  | 'scale-out'
+  | 'zoom-in'
+  | 'zoom-out';
 
 // Zoom preset
 export interface ZoomPreset {
