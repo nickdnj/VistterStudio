@@ -132,35 +132,37 @@ const PreviewWindow = ({
               </div>
             )}
 
-            {/* Overlays */}
-            {overlays.map((overlay, index) => (
-              <div
-                key={`overlay-${overlay.id}`}
-                className="absolute bg-black bg-opacity-60 text-white p-2 rounded text-sm"
-                style={{
-                  top: `${20 + (index * 60)}px`,
-                  right: '20px',
-                  zIndex: 10 + index
-                }}
-              >
-                {overlay.asset ? (
-                  overlay.asset.category === 'images' ? (
-                    <div className="flex items-center space-x-2">
-                      <img
-                        src={`http://localhost:18080${overlay.asset.url}`}
-                        alt={overlay.asset.originalName}
-                        className="w-12 h-8 object-contain"
-                      />
-                      <span>{overlay.asset.originalName}</span>
-                    </div>
-                  ) : (
-                    <span>{overlay.asset.originalName}</span>
-                  )
-                ) : (
-                  <span>{overlay.name || `Overlay ${index + 1}`}</span>
-                )}
-              </div>
-            ))}
+            {/* Overlays - Render image assets as full-size overlays */}
+            {overlays
+              .filter(overlay => overlay.asset?.category === 'images')
+              .map((overlay, index) => (
+                <img
+                  key={`overlay-${overlay.id}`}
+                  src={`http://localhost:18080${overlay.asset.url}`}
+                  alt={overlay.asset.originalName}
+                  className="absolute top-0 left-0 w-full h-full object-contain rounded"
+                  style={{
+                    zIndex: 10 + index
+                  }}
+                />
+              ))}
+
+            {/* Non-image overlays as info boxes */}
+            {overlays
+              .filter(overlay => overlay.asset?.category !== 'images')
+              .map((overlay, index) => (
+                <div
+                  key={`overlay-info-${overlay.id}`}
+                  className="absolute bg-black bg-opacity-60 text-white p-2 rounded text-sm"
+                  style={{
+                    top: `${20 + (index * 60)}px`,
+                    right: '20px',
+                    zIndex: 20 + index
+                  }}
+                >
+                  <span>{overlay.asset?.originalName || overlay.name || `Overlay ${index + 1}`}</span>
+                </div>
+              ))}
 
             {/* Timeline Info Overlay */}
             <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">

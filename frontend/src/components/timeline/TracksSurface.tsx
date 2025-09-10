@@ -62,7 +62,15 @@ function TrackElement({ element, timeScale, onUpdate, onRemove }: TrackElementPr
       title={`${element.name} (${element.duration}s)`}
     >
       <div className="flex items-center h-full px-2 space-x-2">
-        <Icon className="h-4 w-4 text-white flex-shrink-0" />
+        {element.type === 'images' && element.asset?.url ? (
+          <img
+            src={`http://localhost:18080${element.asset.url}`}
+            alt={element.asset.originalName}
+            className="h-8 w-8 object-cover rounded flex-shrink-0"
+          />
+        ) : (
+          <Icon className="h-4 w-4 text-white flex-shrink-0" />
+        )}
         <div className="flex-1 min-w-0">
           <div className="text-white text-xs font-medium truncate">
             {element.name}
