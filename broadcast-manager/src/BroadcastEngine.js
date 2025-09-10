@@ -163,15 +163,40 @@ class BroadcastEngine {
       
       let streamUrl = null;
       
+      // Debug: log the raw camera URLs
+      console.log(`🔍 Raw camera URLs for ${camera.nickname}:`, {
+        hls_url: camera.hls_url,
+        rtsp_url: camera.rtsp_url,
+        product_model: camera.product_model
+      });
+
       // Try HLS first (most compatible with FFmpeg)
       if (camera.hls_url) {
-        streamUrl = camera.hls_url.replace('http://localhost:8888', 'http://wyze-bridge:8888');
-        console.log(`📡 Using HLS for v4 camera ${camera.nickname}: ${streamUrl}`);
+        streamUrl = camera.hls_url;
+        
+        // Replace all localhost references with wyze-bridge container name
+        streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
+        
+        // Ensure we're using the correct internal port (8888 for HLS in wyze-bridge)
+        streamUrl = streamUrl.replace(':8889', ':8888'); // External port -> Internal port
+        
+        console.log(`📡 HLS URL transformation for v4 camera ${camera.nickname}:`);
+        console.log(`   Original: ${camera.hls_url}`);
+        console.log(`   Final: ${streamUrl}`);
       }
       // Try RTSP as fallback
       else if (camera.rtsp_url) {
-        streamUrl = camera.rtsp_url.replace('rtsp://localhost:8554', 'rtsp://wyze-bridge:8554');
-        console.log(`📡 Using RTSP fallback for v4 camera ${camera.nickname}: ${streamUrl}`);
+        streamUrl = camera.rtsp_url;
+        
+        // Replace all localhost references with wyze-bridge container name
+        streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
+        
+        // Use internal RTSP port (8554)
+        streamUrl = streamUrl.replace(':8555', ':8554'); // External port -> Internal port
+        
+        console.log(`📡 RTSP URL transformation for v4 camera ${camera.nickname}:`);
+        console.log(`   Original: ${camera.rtsp_url}`);
+        console.log(`   Final: ${streamUrl}`);
       }
       else {
         throw new Error(`No compatible stream URL found for v4 camera ${camera.nickname}. WebRTC-only cameras require additional bridge implementation.`);

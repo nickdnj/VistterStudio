@@ -16,13 +16,30 @@ const BroadcastPanel = ({ className = '' }) => {
     fps: 0
   });
   
-  // Form state
-  const [streamConfig, setStreamConfig] = useState({
-    rtmpUrl: 'rtmp://a.rtmp.youtube.com/live2',
-    streamKey: '',
-    title: 'VistterStudio Live Stream',
-    description: 'Live stream from VistterStudio'
+  // Form state with localStorage persistence
+  const [streamConfig, setStreamConfig] = useState(() => {
+    const saved = localStorage.getItem('vistterstudio-stream-config');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved stream config');
+      }
+    }
+    return {
+      rtmpUrl: 'rtmp://a.rtmp.youtube.com/live2',
+      streamKey: '',
+      title: 'VistterStudio Live Stream',
+      description: 'Live stream from VistterStudio'
+    };
   });
+
+  // Save stream config to localStorage whenever it changes
+  const updateStreamConfig = (updates) => {
+    const newConfig = { ...streamConfig, ...updates };
+    setStreamConfig(newConfig);
+    localStorage.setItem('vistterstudio-stream-config', JSON.stringify(newConfig));
+  };
   
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -204,7 +221,7 @@ const BroadcastPanel = ({ className = '' }) => {
           <input
             type="text"
             value={streamConfig.title}
-            onChange={(e) => setStreamConfig(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) => updateStreamConfig({ title: e.target.value })}
             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
             placeholder="Your live stream title"
           />
@@ -216,7 +233,7 @@ const BroadcastPanel = ({ className = '' }) => {
           <input
             type="text"
             value={streamConfig.rtmpUrl}
-            onChange={(e) => setStreamConfig(prev => ({ ...prev, rtmpUrl: e.target.value }))}
+            onChange={(e) => updateStreamConfig({ rtmpUrl: e.target.value })}
             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono"
             placeholder="rtmp://a.rtmp.youtube.com/live2"
           />
@@ -228,7 +245,7 @@ const BroadcastPanel = ({ className = '' }) => {
           <input
             type="password"
             value={streamConfig.streamKey}
-            onChange={(e) => setStreamConfig(prev => ({ ...prev, streamKey: e.target.value }))}
+            onChange={(e) => updateStreamConfig({ streamKey: e.target.value })}
             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm font-mono"
             placeholder="Your YouTube stream key"
           />
@@ -242,7 +259,7 @@ const BroadcastPanel = ({ className = '' }) => {
           <label className="block text-xs text-gray-400 mb-1">Description (Optional)</label>
           <textarea
             value={streamConfig.description}
-            onChange={(e) => setStreamConfig(prev => ({ ...prev, description: e.target.value }))}
+            onChange={(e) => updateStreamConfig({ description: e.target.value })}
             className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white text-sm"
             rows="2"
             placeholder="Stream description..."

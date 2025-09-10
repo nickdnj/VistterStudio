@@ -1,20 +1,8 @@
 # Use Node.js 18 alpine for smaller image size
 FROM node:18-alpine
 
-# Install FFmpeg and dependencies for Puppeteer
-RUN apk add --no-cache \
-    ffmpeg \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont
-
-# Tell Puppeteer to use installed Chromium
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+# Install FFmpeg
+RUN apk add --no-cache ffmpeg
 
 # Set working directory
 WORKDIR /usr/src/app
