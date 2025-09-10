@@ -5,7 +5,10 @@ import {
   Square, 
   SkipBack, 
   SkipForward,
-  Plus
+  Plus,
+  RotateCcw,
+  RotateCw,
+  Trash2
 } from 'lucide-react';
 import { useTimelineStore } from '../state/store';
 import { TimeFormatter, TimeScale } from '../models/TimeScale';
@@ -30,6 +33,11 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
     setPlaybackRate,
     setZoom,
     addTrack,
+    clearTimeline,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useTimelineStore();
 
   // Calculate total timeline duration from clips
@@ -82,12 +90,32 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
           e.preventDefault();
           setPlaybackRate(2);
           break;
+        case 'z':
+        case 'Z':
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+          }
+          break;
+        case 'Delete':
+        case 'Backspace':
+          if (e.metaKey || e.ctrlKey) {
+            e.preventDefault();
+            if (confirm('Are you sure you want to clear the entire timeline? This cannot be undone.')) {
+              clearTimeline();
+            }
+          }
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, totalDurationMs, play, pause, setCurrentTime, setPlaybackRate]);
+  }, [isPlaying, totalDurationMs, play, pause, setCurrentTime, setPlaybackRate, undo, redo, clearTimeline]);
 
   // Jump to start/end
   const jumpToStart = () => setCurrentTime(0);
@@ -166,6 +194,53 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
               {label}
             </button>
           ))}
+        </div>
+
+        <div className="w-px h-6 bg-gray-600 ml-4" />
+
+        {/* Timeline management controls */}
+        <div className="flex items-center space-x-2 ml-4">
+          <button
+            onClick={undo}
+            disabled={!canUndo()}
+            className={`
+              p-2 rounded-lg transition-colors
+              ${canUndo() 
+                ? 'hover:bg-gray-700 text-white' 
+                : 'text-gray-600 cursor-not-allowed'
+              }
+            `}
+            title="Undo (Ctrl+Z)"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={redo}
+            disabled={!canRedo()}
+            className={`
+              p-2 rounded-lg transition-colors
+              ${canRedo() 
+                ? 'hover:bg-gray-700 text-white' 
+                : 'text-gray-600 cursor-not-allowed'
+              }
+            `}
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <RotateCw className="h-4 w-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to clear the entire timeline? This cannot be undone.')) {
+                clearTimeline();
+              }
+            }}
+            className="p-2 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors"
+            title="Clear Timeline (Ctrl+Delete)"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
