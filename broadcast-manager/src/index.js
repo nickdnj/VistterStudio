@@ -1,0 +1,175 @@
+const express = require('express');
+const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
+const BroadcastEngine = require('./BroadcastEngine');
+
+const app = express();
+const PORT = process.env.PORT || 19001;
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+
+// Global broadcast engine instance
+let broadcastEngine = null;
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    service: 'VistterStudio Broadcast Manager',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Get broadcast status
+app.get('/api/broadcast/status', (req, res) => {
+  if (!broadcastEngine) {
+    return res.json({
+      status: 'offline',
+      isStreaming: false,
+      uptime: 0,
+      error: null
+    });
+  }
+
+  res.json(broadcastEngine.getStatus());
+});
+
+// Start broadcast
+app.post('/api/broadcast/start', async (req, res) => {
+  try {
+    const { timelineData, streamConfig } = req.body;
+
+    // Validate required fields
+    if (!timelineData || !streamConfig) {
+      return res.status(400).json({
+        error: 'Missing required fields: timelineData and streamConfig'
+      });
+    }
+
+    if (!streamConfig.rtmpUrl || !streamConfig.streamKey) {
+      return res.status(400).json({
+        error: 'Missing RTMP URL or Stream Key'
+      });
+    }
+
+    // Stop existing broadcast if running
+    if (broadcastEngine && broadcastEngine.isStreaming()) {
+      console.log('Stopping existing broadcast...');
+      await broadcastEngine.stop();
+    }
+
+    // Create new broadcast engine
+    broadcastEngine = new BroadcastEngine({
+      id: uuidv4(),
+      timelineData,
+      streamConfig,
+      onStatusChange: (status) => {
+        console.log('Broadcast status changed:', status);
+        // TODO: Implement WebSocket to notify frontend of status changes
+      },
+      onError: (error) => {
+        console.error('Broadcast error:', error);
+      }
+    });
+
+    // Start the broadcast
+    await broadcastEngine.start();
+
+    res.json({
+      message: 'Broadcast started successfully',
+      broadcastId: broadcastEngine.getId(),
+      status: broadcastEngine.getStatus()
+    });
+
+  } catch (error) {
+    console.error('Error starting broadcast:', error);
+    res.status(500).json({
+      error: 'Failed to start broadcast',
+      details: error.message
+    });
+  }
+});
+
+// Stop broadcast
+app.post('/api/broadcast/stop', async (req, res) => {
+  try {
+    if (!broadcastEngine || !broadcastEngine.isStreaming()) {
+      return res.status(400).json({
+        error: 'No active broadcast to stop'
+      });
+    }
+
+    await broadcastEngine.stop();
+    broadcastEngine = null;
+
+    res.json({
+      message: 'Broadcast stopped successfully'
+    });
+
+  } catch (error) {
+    console.error('Error stopping broadcast:', error);
+    res.status(500).json({
+      error: 'Failed to stop broadcast',
+      details: error.message
+    });
+  }
+});
+
+// Update timeline during live broadcast
+app.post('/api/broadcast/update-timeline', async (req, res) => {
+  try {
+    const { timelineData } = req.body;
+
+    if (!broadcastEngine || !broadcastEngine.isStreaming()) {
+      return res.status(400).json({
+        error: 'No active broadcast to update'
+      });
+    }
+
+    await broadcastEngine.updateTimeline(timelineData);
+
+    res.json({
+      message: 'Timeline updated successfully',
+      status: broadcastEngine.getStatus()
+    });
+
+  } catch (error) {
+    console.error('Error updating timeline:', error);
+    res.status(500).json({
+      error: 'Failed to update timeline',
+      details: error.message
+    });
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    details: err.message
+  });
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('Shutting down broadcast manager...');
+  
+  if (broadcastEngine && broadcastEngine.isStreaming()) {
+    try {
+      await broadcastEngine.stop();
+    } catch (error) {
+      console.error('Error stopping broadcast during shutdown:', error);
+    }
+  }
+  
+  process.exit(0);
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 VistterStudio Broadcast Manager running on port ${PORT}`);
+  console.log(`📺 Ready to handle live streaming requests`);
+});

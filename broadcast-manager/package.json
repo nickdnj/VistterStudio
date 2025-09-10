@@ -1,0 +1,25 @@
+{
+  "name": "vistterstudio-broadcast-manager",
+  "version": "1.0.0",
+  "description": "VistterStudio Live Broadcasting Service",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["streaming", "broadcast", "youtube", "ffmpeg", "rtmp"],
+  "author": "VistterStudio",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "ws": "^8.14.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

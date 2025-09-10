@@ -37,3 +37,17 @@ services:
       - "19000:80"
     depends_on:
       - vistterstudio
+
+  broadcast-manager:
+    container_name: vistterstudio-broadcast-manager
+    restart: unless-stopped
+    build: ./broadcast-manager
+    ports:
+      - "19001:19001"
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./server/assets:/usr/src/app/assets:ro
+    depends_on:
+      - vistterstudio
+      - wyze-bridge

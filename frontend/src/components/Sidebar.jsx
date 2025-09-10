@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3 } from 'lucide-react';
+import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3, Radio } from 'lucide-react';
 import { PropertiesDock } from '../timeline';
 import AssetManager from './AssetManager';
+import BroadcastPanel from './BroadcastPanel';
 
 const Sidebar = ({ 
   cameras, 
@@ -19,7 +20,7 @@ const Sidebar = ({
     { id: 'assets', name: 'Assets', icon: FolderOpen },
     { id: 'effects', name: 'Effects', icon: Layers },
     { id: 'properties', name: 'Properties', icon: Edit3 },
-    { id: 'tools', name: 'Tools', icon: Settings },
+    { id: 'broadcast', name: 'Broadcast', icon: Radio },
   ];
 
   const handleAssetDrag = (asset, e) => {
@@ -245,49 +246,8 @@ const Sidebar = ({
           </div>
         )}
 
-        {activeTab === 'tools' && (
-          <div className="p-4">
-            <h3 className="font-medium text-white mb-4">Tools & Settings</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-2">Export</h4>
-                <button className="w-full p-2 bg-primary hover:bg-blue-600 text-white rounded text-sm transition-colors">
-                  Export Timeline
-                </button>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-2">Project</h4>
-                <div className="space-y-2">
-                  <button className="w-full p-2 bg-gray-800 hover:bg-gray-700 text-white rounded text-sm">
-                    Save Project
-                  </button>
-                  <button className="w-full p-2 bg-gray-800 hover:bg-gray-700 text-white rounded text-sm">
-                    Load Project
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-300 mb-2">Settings</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-400">
-                    <span>Resolution</span>
-                    <span>1920x1080</span>
-                  </div>
-                  <div className="flex justify-between text-gray-400">
-                    <span>Frame Rate</span>
-                    <span>30 FPS</span>
-                  </div>
-                  <div className="flex justify-between text-gray-400">
-                    <span>Quality</span>
-                    <span>High</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        {activeTab === 'broadcast' && (
+          <BroadcastPanel />
         )}
       </div>
 
