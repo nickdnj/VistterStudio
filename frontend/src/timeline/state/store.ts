@@ -7,6 +7,7 @@ interface TimelineState {
   // Time domain
   currentTimeMs: number;
   isPlaying: boolean;
+  isLooping: boolean;
   playbackRate: PlaybackRate;
   
   // Viewport
@@ -33,6 +34,7 @@ interface TimelineState {
   play: () => void;
   pause: () => void;
   stop: () => void;
+  toggleLoop: () => void;
   setPlaybackRate: (rate: PlaybackRate) => void;
   
   // Viewport actions
@@ -59,6 +61,7 @@ interface TimelineState {
   snapTime: (timeMs: number, snapIntervalMs?: number) => number;
   getClipsAtTime: (timeMs: number) => Clip[];
   getActiveClips: () => Clip[];
+  getDynamicDuration: () => number;
   
   // Timeline management actions
   clearTimeline: () => void;
@@ -161,6 +164,7 @@ export const useTimelineStore = create<TimelineState>()(
     // Initial state
     currentTimeMs: 0,
     isPlaying: false,
+    isLooping: false,
     playbackRate: 1,
     
     viewport: DEFAULT_VIEWPORT,
@@ -185,7 +189,22 @@ export const useTimelineStore = create<TimelineState>()(
     
     // Time actions
     setCurrentTime: (timeMs: number) => {
-      set({ currentTimeMs: Math.max(0, timeMs) });
+      const { isLooping, getDynamicDuration } = get();
+      const dynamicDuration = getDynamicDuration();
+      
+      let newTime = Math.max(0, timeMs);
+      
+      if (isLooping) {
+        // If looping and duration is positive, use modulo to loop back to the start
+        if (newTime >= dynamicDuration && dynamicDuration > 0) {
+          newTime = 0;
+        }
+      } else {
+        // If not looping, clamp the time to the duration so the playhead stops at the end
+        newTime = Math.min(newTime, dynamicDuration);
+      }
+      
+      set({ currentTimeMs: newTime });
     },
     
     play: () => {
@@ -201,6 +220,11 @@ export const useTimelineStore = create<TimelineState>()(
         isPlaying: false,
         currentTimeMs: 0,
       });
+    },
+    
+    toggleLoop: () => {
+      const { isLooping } = get();
+      set({ isLooping: !isLooping });
     },
     
     setPlaybackRate: (rate: PlaybackRate) => {
@@ -378,6 +402,31 @@ export const useTimelineStore = create<TimelineState>()(
       return get().getClipsAtTime(currentTimeMs);
     },
     
+    getDynamicDuration: () => {
+      const { tracks, clips } = get();
+      
+      // Find the main track
+      const mainTrack = tracks.find(track => track.id === 'main' || track.kind === 'video');
+      if (!mainTrack) {
+        return 60000; // Default 1 minute if no main track
+      }
+      
+      // Get all clips on the main track
+      const mainTrackClips = clips.filter(clip => clip.trackId === mainTrack.id && clip.enabled !== false);
+      
+      if (mainTrackClips.length === 0) {
+        return 0; // Default 0 if no clips on main track
+      }
+      
+      // Find the end of the last clip on the main track
+      const lastClipEnd = Math.max(
+        0, // Ensure we don't return a negative number if clips are empty
+        ...mainTrackClips.map(clip => clip.startMs + clip.durationMs)
+      );
+      
+      return lastClipEnd;
+    },
+    
     // Timeline management actions
     clearTimeline: () => {
       saveToHistory(set, get);
@@ -457,19 +506,26 @@ useTimelineStore.subscribe(
       let lastTime = performance.now();
       
       const tick = () => {
-        if (!useTimelineStore.getState().isPlaying) {
+        const state = useTimelineStore.getState();
+        if (!state.isPlaying) {
           return;
         }
         
         const currentTime = performance.now();
-        const deltaMs = (currentTime - lastTime) * useTimelineStore.getState().playbackRate;
+        const deltaMs = (currentTime - lastTime) * state.playbackRate;
         lastTime = currentTime;
         
-        useTimelineStore.getState().setCurrentTime(
-          useTimelineStore.getState().currentTimeMs + deltaMs
-        );
+        const newTimeMs = state.currentTimeMs + deltaMs;
+        const dynamicDuration = state.getDynamicDuration();
         
-        requestAnimationFrame(tick);
+        // If not looping and we've reached the end, pause playback
+        if (!state.isLooping && newTimeMs >= dynamicDuration) {
+          state.pause();
+          state.setCurrentTime(dynamicDuration); // Clamp to the end
+        } else {
+          state.setCurrentTime(newTimeMs);
+          requestAnimationFrame(tick);
+        }
       };
       
       requestAnimationFrame(tick);

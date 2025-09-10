@@ -8,7 +8,8 @@ import {
   Plus,
   RotateCcw,
   RotateCw,
-  Trash2
+  Trash2,
+  Repeat
 } from 'lucide-react';
 import { useTimelineStore } from '../state/store';
 import { TimeFormatter, TimeScale } from '../models/TimeScale';
@@ -22,6 +23,7 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
   const {
     currentTimeMs,
     isPlaying,
+    isLooping,
     playbackRate,
     viewport,
     tracks,
@@ -31,6 +33,7 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
     stop,
     setCurrentTime,
     setPlaybackRate,
+    toggleLoop,
     setZoom,
     addTrack,
     clearTimeline,
@@ -38,13 +41,11 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
     redo,
     canUndo,
     canRedo,
+    getDynamicDuration,
   } = useTimelineStore();
 
-  // Calculate total timeline duration from clips
-  const totalDurationMs = Math.max(
-    10 * 60 * 1000, // Minimum 10 minutes
-    ...clips.map(clip => clip.startMs + clip.durationMs)
-  );
+  // Calculate total timeline duration dynamically based on main track
+  const totalDurationMs = getDynamicDuration();
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -110,12 +111,17 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
             }
           }
           break;
+        case 'r':
+        case 'R':
+          e.preventDefault();
+          toggleLoop();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, totalDurationMs, play, pause, setCurrentTime, setPlaybackRate, undo, redo, clearTimeline]);
+  }, [isPlaying, totalDurationMs, play, pause, setCurrentTime, setPlaybackRate, undo, redo, clearTimeline, toggleLoop]);
 
   // Jump to start/end
   const jumpToStart = () => setCurrentTime(0);
@@ -173,6 +179,21 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
           title="Jump to end (End)"
         >
           <SkipForward className="h-4 w-4 text-white" />
+        </button>
+
+        {/* Repeat/Loop button */}
+        <button
+          onClick={toggleLoop}
+          className={`
+            p-2 rounded-lg transition-colors ml-4
+            ${isLooping 
+              ? 'bg-primary text-white' 
+              : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            }
+          `}
+          title={`${isLooping ? 'Disable' : 'Enable'} loop/repeat (R)`}
+        >
+          <Repeat className="h-4 w-4" />
         </button>
 
         {/* Playback rate */}
