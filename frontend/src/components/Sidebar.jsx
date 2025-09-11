@@ -13,6 +13,7 @@ const Sidebar = ({
   onAssetSelect,
   allCameraSources = { wyzeCameras: {}, rtmpCameras: [] },
   onRefreshSources,
+  onCameraSourcesUpdate,
   className = "" 
 }) => {
   const [activeTab, setActiveTab] = useState('cameras');
@@ -82,7 +83,7 @@ const Sidebar = ({
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto flex flex-col">
           {activeTab === 'sources' && (
-            <SourcesManager />
+            <SourcesManager onCameraSourcesUpdate={onCameraSourcesUpdate} />
           )}
 
           {activeTab === 'cameras' && (

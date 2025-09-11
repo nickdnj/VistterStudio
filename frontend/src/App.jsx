@@ -87,6 +87,14 @@ function App() {
   const getStreamUrl = (camera, type = 'hls') => {
     if (!camera) return ''
     
+    // Handle RTMP cameras
+    if (camera.sourceType === 'rtmp') {
+      // For RTMP cameras, return the direct RTMP URL
+      // Note: Browser can't play RTMP directly, but we'll handle this in the preview component
+      return camera.rtmpUrl
+    }
+    
+    // Handle Wyze cameras
     // Check if this is a v4 camera that needs WebRTC
     const isV4Camera = camera.product_model === 'HL_CAM4'
     
@@ -116,8 +124,18 @@ function App() {
     return 'hls'
   }
 
-  // Get timeline preview data using the new timeline system
-  const { previewContent, overlays } = useTimelinePreview(cameras, getStreamUrl)
+  // Create unified camera object for preview system (Wyze + RTMP)
+  const unifiedCameras = {
+    ...allCameraSources.wyzeCameras,
+    ...Object.fromEntries(
+      allCameraSources.rtmpCameras
+        .filter(cam => cam.enabled)
+        .map(cam => [cam.id, { ...cam, sourceType: 'rtmp' }])
+    )
+  }
+
+  // Get timeline preview data using the unified camera system
+  const { previewContent, overlays } = useTimelinePreview(unifiedCameras, getStreamUrl)
 
   // Handle resize events for panels
   const handleMouseDown = (e, type) => {
@@ -214,6 +232,7 @@ function App() {
               console.log('Asset selected:', asset)
               fetchAssets() // Refresh assets if needed
             }}
+            onCameraSourcesUpdate={fetchAllCameraSources}
             allCameraSources={allCameraSources}
             onRefreshSources={fetchAllCameraSources}
             className="h-full"

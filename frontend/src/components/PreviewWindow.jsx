@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings } from 'lucide-react';
+import { Play, Pause, Square, Volume2, VolumeX, Maximize2, Settings, Wifi } from 'lucide-react';
 import { useTimelineStore } from '../timeline';
 import { TimeFormatter } from '../timeline';
 import { calculateTransitionState } from '../timeline/utils/transitions';
@@ -95,18 +95,21 @@ const PreviewWindow = ({
             {/* Main Content */}
             {previewContent.type === 'camera' ? (
               previewContent.camera.sourceType === 'rtmp' ? (
-                // RTMP cameras use direct video element
-                <video
-                  key={`rtmp-${previewContent.camera.id}`}
-                  src={previewContent.camera.rtmpUrl}
-                  className="w-full h-full rounded object-contain"
-                  autoPlay={isPlaying}
-                  muted={isMuted}
-                  controls={false}
-                  onError={(e) => {
-                    console.error('RTMP video error:', e);
-                  }}
-                />
+                // RTMP cameras - browsers can't play RTMP directly, show info for now
+                <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded">
+                  <div className="text-center">
+                    <Wifi className="h-16 w-16 text-green-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-white mb-2">{previewContent.camera.name}</h3>
+                    <p className="text-gray-400 mb-2">RTMP Camera Source</p>
+                    <p className="text-sm text-gray-500 font-mono">{previewContent.camera.rtmpUrl}</p>
+                    <div className="mt-4 p-3 bg-blue-900 bg-opacity-30 rounded border border-blue-700">
+                      <p className="text-xs text-blue-300">
+                        RTMP preview requires conversion to HLS/WebRTC.
+                        Broadcasting to YouTube Live is fully supported.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               ) : previewContent.camera.product_model === 'HL_CAM4' ? (
                 // v4 cameras use WebRTC iframe
                 <iframe

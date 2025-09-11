@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Camera, Plus, Edit3, Trash2, Save, X, AlertCircle, CheckCircle, Wifi } from 'lucide-react';
 import axios from 'axios';
 
-const SourcesManager = ({ className = '' }) => {
+const SourcesManager = ({ className = '', onCameraSourcesUpdate }) => {
   const [sources, setSources] = useState({
     wyzeCameras: {},
     rtmpCameras: []
@@ -79,6 +79,9 @@ const SourcesManager = ({ className = '' }) => {
       }
 
       await fetchSources();
+      if (onCameraSourcesUpdate) {
+        onCameraSourcesUpdate(); // Notify parent to refresh camera sources
+      }
       resetForm();
     } catch (error) {
       console.error('Error saving RTMP camera:', error);
@@ -94,6 +97,9 @@ const SourcesManager = ({ className = '' }) => {
     try {
       await axios.delete(`http://localhost:18080/api/sources/rtmp/${camera.id}`);
       await fetchSources();
+      if (onCameraSourcesUpdate) {
+        onCameraSourcesUpdate(); // Notify parent to refresh camera sources
+      }
     } catch (error) {
       console.error('Error deleting RTMP camera:', error);
       alert(`Failed to delete camera: ${error.response?.data?.message || error.message}`);
@@ -107,6 +113,9 @@ const SourcesManager = ({ className = '' }) => {
         enabled: !camera.enabled
       });
       await fetchSources();
+      if (onCameraSourcesUpdate) {
+        onCameraSourcesUpdate(); // Notify parent to refresh camera sources
+      }
     } catch (error) {
       console.error('Error toggling RTMP camera:', error);
       alert(`Failed to toggle camera: ${error.response?.data?.message || error.message}`);
