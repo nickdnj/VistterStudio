@@ -58,7 +58,8 @@ const PreviewWindow = ({
           </span>
           {previewContent && (
             <span className="text-gray-400 text-sm">
-              {previewContent.type === 'camera' ? previewContent.camera.nickname : 
+              {previewContent.type === 'camera' ? 
+                (previewContent.camera.name || previewContent.camera.nickname) : 
                previewContent.type === 'asset' ? previewContent.asset.originalName : 'Empty'}
             </span>
           )}
@@ -93,7 +94,20 @@ const PreviewWindow = ({
           <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
             {/* Main Content */}
             {previewContent.type === 'camera' ? (
-              previewContent.camera.product_model === 'HL_CAM4' ? (
+              previewContent.camera.sourceType === 'rtmp' ? (
+                // RTMP cameras use direct video element
+                <video
+                  key={`rtmp-${previewContent.camera.id}`}
+                  src={previewContent.camera.rtmpUrl}
+                  className="w-full h-full rounded object-contain"
+                  autoPlay={isPlaying}
+                  muted={isMuted}
+                  controls={false}
+                  onError={(e) => {
+                    console.error('RTMP video error:', e);
+                  }}
+                />
+              ) : previewContent.camera.product_model === 'HL_CAM4' ? (
                 // v4 cameras use WebRTC iframe
                 <iframe
                   key={`webrtc-${previewContent.camera.mac}`}
@@ -102,9 +116,9 @@ const PreviewWindow = ({
                   allow="camera; microphone; autoplay"
                 />
               ) : (
-                // Legacy cameras use HLS
+                // Legacy Wyze cameras use HLS
                 <VideoPlayer
-                  key={`camera-${previewContent.camera.mac}`}
+                  key={`camera-${previewContent.camera.mac || previewContent.camera.id}`}
                   src={getStreamUrl(previewContent.camera, 'hls')}
                   className="w-full h-full rounded"
                   autoPlay={isPlaying}
@@ -206,7 +220,7 @@ const PreviewWindow = ({
             <div className="absolute top-4 left-4 bg-black bg-opacity-70 rounded-lg p-3 text-white text-sm">
               <div className="space-y-1">
                 <div>⏱️ {TimeFormatter.formatTime(currentTimeMs)} / 10:00</div>
-                <div>🎬 {previewContent.element?.name || 'Timeline Element'}</div>
+                <div>🎬 {previewContent.element?.name || (previewContent.camera?.name || previewContent.camera?.nickname) || 'Timeline Element'}</div>
                 {overlays.length > 0 && (
                   <div>📺 {overlays.length} overlay{overlays.length !== 1 ? 's' : ''}</div>
                 )}
