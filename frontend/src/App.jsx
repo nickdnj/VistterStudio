@@ -16,6 +16,10 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [assets, setAssets] = useState([])
+  const [allCameraSources, setAllCameraSources] = useState({
+    wyzeCameras: {},
+    rtmpCameras: []
+  })
   
   // Legacy state removed - now handled by timeline store
   
@@ -27,6 +31,7 @@ function App() {
   useEffect(() => {
     fetchCameras()
     fetchAssets()
+    fetchAllCameraSources()
   }, [])
 
   const fetchAssets = async () => {
@@ -35,6 +40,28 @@ function App() {
       setAssets(response.data.assets || [])
     } catch (err) {
       console.error('Error fetching assets:', err)
+    }
+  }
+
+  const fetchAllCameraSources = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/sources`)
+      setAllCameraSources(response.data)
+      
+      // Also update the legacy cameras state for backward compatibility
+      setCameras(response.data.wyzeCameras || {})
+      
+      // Auto-select first camera from any source
+      const firstWyzeCamera = Object.keys(response.data.wyzeCameras || {})[0]
+      const firstRtmpCamera = response.data.rtmpCameras?.[0]
+      
+      if (firstWyzeCamera && !selectedCamera) {
+        setSelectedCamera(firstWyzeCamera)
+      } else if (firstRtmpCamera && !selectedCamera && !firstWyzeCamera) {
+        setSelectedCamera(firstRtmpCamera.id)
+      }
+    } catch (err) {
+      console.error('Error fetching camera sources:', err)
     }
   }
 
@@ -187,6 +214,8 @@ function App() {
               console.log('Asset selected:', asset)
               fetchAssets() // Refresh assets if needed
             }}
+            allCameraSources={allCameraSources}
+            onRefreshSources={fetchAllCameraSources}
             className="h-full"
           />
         </div>

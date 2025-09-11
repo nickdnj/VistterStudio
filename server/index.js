@@ -246,6 +246,171 @@ app.delete('/api/assets/:id', async (req, res) => {
     }
 });
 
+/**
+ * @api {get} /api/sources Get All Camera Sources
+ * @apiName GetCameraSources
+ * @apiGroup Sources
+ * 
+ * @apiSuccess {Object} sources All camera sources (Wyze + RTMP).
+ */
+app.get('/api/sources', async (req, res) => {
+    try {
+        const sourcesFile = path.join(ASSETS_DIR, 'camera-sources.json');
+        let sourcesData = { rtmpCameras: [], metadata: { version: '1.0.0', lastUpdated: new Date().toISOString() } };
+        
+        if (await fs.pathExists(sourcesFile)) {
+            sourcesData = await fs.readJson(sourcesFile);
+        }
+
+        // Get Wyze cameras from wyze-bridge
+        let wyzeCameras = {};
+        try {
+            const wyzeResponse = await axios.get('http://wyze-bridge:5000/api', { timeout: 5000 });
+            wyzeCameras = wyzeResponse.data.cameras || {};
+        } catch (error) {
+            console.warn('Could not fetch Wyze cameras:', error.message);
+        }
+
+        res.json({
+            wyzeCameras,
+            rtmpCameras: sourcesData.rtmpCameras || [],
+            metadata: sourcesData.metadata
+        });
+    } catch (error) {
+        console.error('Error fetching camera sources:', error.message);
+        res.status(500).json({ message: 'Failed to fetch camera sources' });
+    }
+});
+
+/**
+ * @api {post} /api/sources/rtmp Add RTMP Camera Source
+ * @apiName AddRTMPSource
+ * @apiGroup Sources
+ */
+app.post('/api/sources/rtmp', async (req, res) => {
+    try {
+        const { name, rtmpUrl, username, password, description } = req.body;
+
+        if (!name || !rtmpUrl) {
+            return res.status(400).json({ message: 'Name and RTMP URL are required' });
+        }
+
+        const sourcesFile = path.join(ASSETS_DIR, 'camera-sources.json');
+        let sourcesData = { rtmpCameras: [], metadata: { version: '1.0.0' } };
+        
+        if (await fs.pathExists(sourcesFile)) {
+            sourcesData = await fs.readJson(sourcesFile);
+        }
+
+        const newCamera = {
+            id: `rtmp_${Date.now()}`,
+            name: name.trim(),
+            type: 'rtmp',
+            rtmpUrl: rtmpUrl.trim(),
+            username: username?.trim() || '',
+            password: password?.trim() || '',
+            description: description?.trim() || '',
+            enabled: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        sourcesData.rtmpCameras.push(newCamera);
+        sourcesData.metadata.lastUpdated = new Date().toISOString();
+        
+        await fs.writeJson(sourcesFile, sourcesData, { spaces: 2 });
+
+        res.json({
+            message: 'RTMP camera source added successfully',
+            camera: newCamera
+        });
+    } catch (error) {
+        console.error('Error adding RTMP camera source:', error.message);
+        res.status(500).json({ message: 'Failed to add RTMP camera source' });
+    }
+});
+
+/**
+ * @api {put} /api/sources/rtmp/:id Update RTMP Camera Source
+ * @apiName UpdateRTMPSource
+ * @apiGroup Sources
+ */
+app.put('/api/sources/rtmp/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, rtmpUrl, username, password, description, enabled } = req.body;
+
+        const sourcesFile = path.join(ASSETS_DIR, 'camera-sources.json');
+        
+        if (!await fs.pathExists(sourcesFile)) {
+            return res.status(404).json({ message: 'No RTMP camera sources found' });
+        }
+
+        const sourcesData = await fs.readJson(sourcesFile);
+        const cameraIndex = sourcesData.rtmpCameras.findIndex(cam => cam.id === id);
+        
+        if (cameraIndex === -1) {
+            return res.status(404).json({ message: 'RTMP camera source not found' });
+        }
+
+        // Update camera data
+        sourcesData.rtmpCameras[cameraIndex] = {
+            ...sourcesData.rtmpCameras[cameraIndex],
+            name: name?.trim() || sourcesData.rtmpCameras[cameraIndex].name,
+            rtmpUrl: rtmpUrl?.trim() || sourcesData.rtmpCameras[cameraIndex].rtmpUrl,
+            username: username?.trim() || sourcesData.rtmpCameras[cameraIndex].username,
+            password: password?.trim() || sourcesData.rtmpCameras[cameraIndex].password,
+            description: description?.trim() || sourcesData.rtmpCameras[cameraIndex].description,
+            enabled: enabled !== undefined ? enabled : sourcesData.rtmpCameras[cameraIndex].enabled,
+            updatedAt: new Date().toISOString()
+        };
+
+        sourcesData.metadata.lastUpdated = new Date().toISOString();
+        await fs.writeJson(sourcesFile, sourcesData, { spaces: 2 });
+
+        res.json({
+            message: 'RTMP camera source updated successfully',
+            camera: sourcesData.rtmpCameras[cameraIndex]
+        });
+    } catch (error) {
+        console.error('Error updating RTMP camera source:', error.message);
+        res.status(500).json({ message: 'Failed to update RTMP camera source' });
+    }
+});
+
+/**
+ * @api {delete} /api/sources/rtmp/:id Delete RTMP Camera Source
+ * @apiName DeleteRTMPSource
+ * @apiGroup Sources
+ */
+app.delete('/api/sources/rtmp/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const sourcesFile = path.join(ASSETS_DIR, 'camera-sources.json');
+        
+        if (!await fs.pathExists(sourcesFile)) {
+            return res.status(404).json({ message: 'No RTMP camera sources found' });
+        }
+
+        const sourcesData = await fs.readJson(sourcesFile);
+        const originalLength = sourcesData.rtmpCameras.length;
+        
+        sourcesData.rtmpCameras = sourcesData.rtmpCameras.filter(cam => cam.id !== id);
+        
+        if (sourcesData.rtmpCameras.length === originalLength) {
+            return res.status(404).json({ message: 'RTMP camera source not found' });
+        }
+
+        sourcesData.metadata.lastUpdated = new Date().toISOString();
+        await fs.writeJson(sourcesFile, sourcesData, { spaces: 2 });
+
+        res.json({ message: 'RTMP camera source deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting RTMP camera source:', error.message);
+        res.status(500).json({ message: 'Failed to delete RTMP camera source' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`VistterStudio server listening on port ${PORT}`);
 });

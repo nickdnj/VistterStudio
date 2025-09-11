@@ -59,21 +59,20 @@ class BroadcastEngine {
         error: null
       });
 
-      // Get v4 cameras from timeline
-      const v4Cameras = await this.getV4CamerasFromTimeline();
+      // Get all cameras from timeline (Wyze + RTMP)
+      const allCameras = await this.getAllCamerasFromTimeline();
       
-      if (v4Cameras.length === 0) {
-        throw new Error('No Wyze Cam v4 cameras found in timeline. Only v4 cameras (HL_CAM4) are supported for broadcasting.');
+      if (allCameras.length === 0) {
+        throw new Error('No cameras found in timeline. Add Wyze v4 cameras or RTMP cameras to broadcast.');
       }
 
-      console.log(`📹 Found ${v4Cameras.length} v4 camera(s):`, v4Cameras.map(c => c.nickname));
+      console.log(`📹 Found ${allCameras.length} camera(s):`, allCameras.map(c => c.name || c.nickname));
 
-      // For the initial implementation, we'll use the first v4 camera
-      // and attempt to use its WebRTC endpoint directly via the wyze-bridge
-      const primaryCamera = v4Cameras[0];
+      // Use the first available camera
+      const primaryCamera = allCameras[0];
       
-      // Try to get a streamable URL for the v4 camera
-      const streamUrl = await this.getV4CameraStreamUrl(primaryCamera);
+      // Get streamable URL based on camera source type
+      const streamUrl = await this.getCameraStreamUrl(primaryCamera);
       
       // Start FFmpeg broadcast to YouTube
       await this.startFFmpegBroadcast(streamUrl, primaryCamera);
@@ -118,8 +117,8 @@ class BroadcastEngine {
     }
   }
 
-  async getV4CamerasFromTimeline() {
-    const v4Cameras = [];
+  async getAllCamerasFromTimeline() {
+    const allCameras = [];
     
     const mainTrack = this.timelineData.tracks.find(track => 
       track.id === 'main' || track.kind === 'video'
@@ -139,85 +138,103 @@ class BroadcastEngine {
     for (const clip of mainClips) {
       const camera = clip.camera;
       
-      if (camera.product_model !== 'HL_CAM4') {
-        console.warn(`⚠️ Skipping non-v4 camera: ${camera.nickname} (${camera.product_model})`);
-        continue;
-      }
-      
-      if (!v4Cameras.find(c => c.mac === camera.mac)) {
-        v4Cameras.push(camera);
+      // Add source type identification
+      if (camera.sourceType === 'rtmp') {
+        console.log(`📡 Found RTMP camera: ${camera.name}`);
+        if (!allCameras.find(c => c.id === camera.id)) {
+          allCameras.push(camera);
+        }
+      } else {
+        // Wyze camera
+        console.log(`📹 Found Wyze camera: ${camera.nickname} (${camera.product_model})`);
+        if (!allCameras.find(c => c.mac === camera.mac)) {
+          allCameras.push(camera);
+        }
       }
     }
 
-    return v4Cameras;
+    return allCameras;
   }
 
-  async getV4CameraStreamUrl(camera) {
+  async getCameraStreamUrl(camera) {
     try {
-      console.log(`🔍 Getting stream URL for v4 camera: ${camera.nickname} (${camera.name_uri})`);
-      
-      // For v4 cameras, we have a few options:
-      // 1. Try HLS endpoint if available (some v4 cameras still provide it)
-      // 2. Use RTSP as fallback
-      // 3. Error if neither is available
+      const cameraName = camera.name || camera.nickname;
+      console.log(`🔍 Getting stream URL for camera: ${cameraName}`);
+      console.log(`📋 Camera source type: ${camera.sourceType || 'wyze'}`);
       
       let streamUrl = null;
       
-      // Debug: log the raw camera URLs
-      console.log(`🔍 Raw camera URLs for ${camera.nickname}:`, {
-        hls_url: camera.hls_url,
-        rtsp_url: camera.rtsp_url,
-        product_model: camera.product_model
-      });
+      if (camera.sourceType === 'rtmp') {
+        // RTMP camera - use the URL directly
+        streamUrl = camera.rtmpUrl;
+        console.log(`📡 Using direct RTMP URL: ${streamUrl}`);
+        
+        // Add authentication if provided
+        if (camera.username && camera.password) {
+          // Insert auth into RTMP URL: rtmp://user:pass@host:port/path
+          streamUrl = streamUrl.replace('rtmp://', `rtmp://${camera.username}:${camera.password}@`);
+          console.log(`🔐 Added RTMP authentication for ${cameraName}`);
+        }
+      } else {
+        // Wyze camera - transform URLs for Docker network
+        console.log(`🔍 Raw Wyze camera URLs for ${cameraName}:`, {
+          hls_url: camera.hls_url,
+          rtsp_url: camera.rtsp_url,
+          product_model: camera.product_model
+        });
 
-      // Try HLS first (most compatible with FFmpeg)
-      if (camera.hls_url) {
-        streamUrl = camera.hls_url;
-        
-        // Replace all localhost references with wyze-bridge container name
-        streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
-        
-        // Ensure we're using the correct internal port (8888 for HLS in wyze-bridge)
-        streamUrl = streamUrl.replace(':8889', ':8888'); // External port -> Internal port
-        
-        console.log(`📡 HLS URL transformation for v4 camera ${camera.nickname}:`);
-        console.log(`   Original: ${camera.hls_url}`);
-        console.log(`   Final: ${streamUrl}`);
-      }
-      // Try RTSP as fallback
-      else if (camera.rtsp_url) {
-        streamUrl = camera.rtsp_url;
-        
-        // Replace all localhost references with wyze-bridge container name
-        streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
-        
-        // Use internal RTSP port (8554)
-        streamUrl = streamUrl.replace(':8555', ':8554'); // External port -> Internal port
-        
-        console.log(`📡 RTSP URL transformation for v4 camera ${camera.nickname}:`);
-        console.log(`   Original: ${camera.rtsp_url}`);
-        console.log(`   Final: ${streamUrl}`);
-      }
-      else {
-        throw new Error(`No compatible stream URL found for v4 camera ${camera.nickname}. WebRTC-only cameras require additional bridge implementation.`);
+        // Try HLS first (most compatible with FFmpeg)
+        if (camera.hls_url) {
+          streamUrl = camera.hls_url;
+          
+          // Replace all localhost references with wyze-bridge container name
+          streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
+          
+          // Ensure we're using the correct internal port (8888 for HLS in wyze-bridge)
+          streamUrl = streamUrl.replace(':8889', ':8888'); // External port -> Internal port
+          
+          console.log(`📡 HLS URL transformation for Wyze camera ${cameraName}:`);
+          console.log(`   Original: ${camera.hls_url}`);
+          console.log(`   Final: ${streamUrl}`);
+        }
+        // Try RTSP as fallback
+        else if (camera.rtsp_url) {
+          streamUrl = camera.rtsp_url;
+          
+          // Replace all localhost references with wyze-bridge container name
+          streamUrl = streamUrl.replace(/localhost/g, 'wyze-bridge');
+          
+          // Use internal RTSP port (8554)
+          streamUrl = streamUrl.replace(':8555', ':8554'); // External port -> Internal port
+          
+          console.log(`📡 RTSP URL transformation for Wyze camera ${cameraName}:`);
+          console.log(`   Original: ${camera.rtsp_url}`);
+          console.log(`   Final: ${streamUrl}`);
+        }
+        else {
+          throw new Error(`No compatible stream URL found for Wyze camera ${cameraName}.`);
+        }
       }
       
-      // Test the stream URL
-      try {
-        console.log(`🧪 Testing stream URL: ${streamUrl}`);
-        // For HTTP URLs, test with axios
-        if (streamUrl.startsWith('http')) {
+      if (!streamUrl) {
+        throw new Error(`Failed to determine stream URL for camera ${cameraName}`);
+      }
+      
+      // Test the stream URL (skip for RTMP as it may not respond to HEAD requests)
+      if (streamUrl.startsWith('http')) {
+        try {
+          console.log(`🧪 Testing HLS stream URL: ${streamUrl}`);
           const response = await axios.head(streamUrl, { timeout: 5000 });
           console.log(`✅ Stream URL test passed: ${response.status}`);
+        } catch (testError) {
+          console.warn(`⚠️ Stream URL test failed, but proceeding: ${testError.message}`);
         }
-      } catch (testError) {
-        console.warn(`⚠️ Stream URL test failed, but proceeding: ${testError.message}`);
       }
       
       return streamUrl;
       
     } catch (error) {
-      console.error(`❌ Failed to get stream URL for ${camera.nickname}:`, error);
+      console.error(`❌ Failed to get stream URL for camera:`, error);
       throw error;
     }
   }
@@ -225,7 +242,8 @@ class BroadcastEngine {
   async startFFmpegBroadcast(inputSource, camera) {
     return new Promise((resolve, reject) => {
       try {
-        console.log(`🎬 Starting FFmpeg broadcast for v4 camera: ${camera.nickname}`);
+        const cameraName = camera.name || camera.nickname;
+        console.log(`🎬 Starting FFmpeg broadcast for camera: ${cameraName} (${camera.sourceType || 'wyze'})`);
         console.log(`📡 Input source: ${inputSource}`);
         console.log(`📺 Output: ${this.streamConfig.rtmpUrl}/${this.streamConfig.streamKey}`);
 
@@ -234,7 +252,11 @@ class BroadcastEngine {
             '-re', // Read input at native frame rate
             '-stream_loop', '-1', // Loop input indefinitely
             '-fflags', '+genpts', // Generate timestamps
-            '-timeout', '10000000' // 10 second timeout for network operations
+            '-timeout', '10000000', // 10 second timeout for network operations
+            // Add probe and retry logic for HLS streams
+            '-probesize', '5M',      // Increase probe size to better detect stream info
+            '-analyzeduration', '5M', // Analyze stream for 5 seconds before starting
+            '-rw_timeout', '15000000' // 15 second read timeout
           ])
           .videoCodec('libx264')
           .audioCodec('aac')

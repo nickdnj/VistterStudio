@@ -1,0 +1,20 @@
+{
+  "rtmpCameras": [
+    {
+      "id": "reolink-front",
+      "name": "Reolink Front Door",
+      "type": "rtmp",
+      "rtmpUrl": "rtmp://192.168.86.23:1935/live/main",
+      "username": "",
+      "password": "",
+      "description": "Reolink camera at front entrance",
+      "enabled": true,
+      "createdAt": "2025-09-10T19:15:00.000Z",
+      "updatedAt": "2025-09-10T19:15:00.000Z"
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2025-09-10T19:15:00.000Z"
+  }
+}

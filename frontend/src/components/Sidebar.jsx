@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3, Radio } from 'lucide-react';
+import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3, Radio, Wifi } from 'lucide-react';
 import { PropertiesDock } from '../timeline';
 import AssetManager from './AssetManager';
 import BroadcastPanel from './BroadcastPanel';
+import SourcesManager from './SourcesManager';
 
 const Sidebar = ({ 
   cameras, 
@@ -10,12 +11,15 @@ const Sidebar = ({
   onSelectCamera, 
   assets = [],
   onAssetSelect,
+  allCameraSources = { wyzeCameras: {}, rtmpCameras: [] },
+  onRefreshSources,
   className = "" 
 }) => {
   const [activeTab, setActiveTab] = useState('cameras');
   const [assetManagerOpen, setAssetManagerOpen] = useState(false);
 
   const tabs = [
+    { id: 'sources', name: 'Sources', icon: Wifi },
     { id: 'cameras', name: 'Cameras', icon: Camera },
     { id: 'assets', name: 'Assets', icon: FolderOpen },
     { id: 'effects', name: 'Effects', icon: Layers },
@@ -75,9 +79,13 @@ const Sidebar = ({
         })}
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto flex flex-col">
-        {activeTab === 'cameras' && (
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          {activeTab === 'sources' && (
+            <SourcesManager />
+          )}
+
+          {activeTab === 'cameras' && (
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-white">Camera Feeds</h3>
@@ -86,53 +94,109 @@ const Sidebar = ({
               </span>
             </div>
             
-            <div className="space-y-2">
-              {Object.entries(cameras).map(([cameraId, camera]) => (
-                <div
-                  key={cameraId}
-                  draggable
-                  onDragStart={(e) => {
-                    console.log('Dragging camera:', { cameraId, camera });
-                    e.dataTransfer.setData('text/plain', JSON.stringify({
-                      type: 'camera',
-                      cameraId,
-                      camera
-                    }));
-                  }}
-                  onClick={() => onSelectCamera(cameraId)}
-                  className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-move transition-colors group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
-                      <Camera className="h-4 w-4 text-gray-400" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white text-xs font-medium truncate">
-                        {camera.nickname}
-                      </h4>
-                      <p className="text-gray-400 text-xs">
-                        {camera.model_name} • {camera.is_2k ? '2K' : 'HD'}
-                      </p>
-                    </div>
-                    
-                    <div className={`h-2 w-2 rounded-full ${
-                      camera.enabled ? 'bg-green-500' : 'bg-gray-500'
-                    }`}></div>
+            <div className="space-y-3">
+              {/* Wyze Cameras */}
+              {Object.keys(allCameraSources.wyzeCameras).length > 0 && (
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded"></div>
+                    <h5 className="text-xs font-medium text-gray-400 uppercase">Wyze Cameras</h5>
+                  </div>
+                  <div className="space-y-2">
+                    {Object.entries(allCameraSources.wyzeCameras).map(([cameraId, camera]) => (
+                      <div
+                        key={`wyze-${cameraId}`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', JSON.stringify({
+                            type: 'camera',
+                            cameraId,
+                            camera: { ...camera, sourceType: 'wyze' }
+                          }));
+                        }}
+                        onClick={() => onSelectCamera(cameraId)}
+                        className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-move transition-colors group"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-900 rounded flex items-center justify-center">
+                            <Camera className="h-4 w-4 text-blue-400" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white text-xs font-medium truncate">
+                              {camera.nickname}
+                            </h4>
+                            <p className="text-gray-400 text-xs">
+                              {camera.model_name} • {camera.is_2k ? '2K' : 'HD'}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs px-1 py-0.5 bg-blue-900 text-blue-300 rounded">WYZE</span>
+                            <div className={`w-2 h-2 rounded-full ${
+                              camera.enabled && camera.connected ? 'bg-green-500' : 'bg-yellow-500'
+                            }`} title={camera.connected ? 'Connected' : 'Connecting'}></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-              
-              {Object.keys(cameras).length === 0 && (
-                <div className="text-center py-8">
-                  <Camera className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400 text-sm">No cameras found</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="text-primary text-xs hover:text-blue-400 mt-2"
-                  >
-                    Refresh
-                  </button>
+              )}
+
+              {/* RTMP Cameras */}
+              {allCameraSources.rtmpCameras.filter(cam => cam.enabled).length > 0 && (
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-green-500 rounded"></div>
+                    <h5 className="text-xs font-medium text-gray-400 uppercase">RTMP Cameras</h5>
+                  </div>
+                  <div className="space-y-2">
+                    {allCameraSources.rtmpCameras.filter(cam => cam.enabled).map((camera) => (
+                      <div
+                        key={`rtmp-${camera.id}`}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('text/plain', JSON.stringify({
+                            type: 'camera',
+                            cameraId: camera.id,
+                            camera: { ...camera, sourceType: 'rtmp' }
+                          }));
+                        }}
+                        onClick={() => onSelectCamera(camera.id)}
+                        className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-move transition-colors group"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-900 rounded flex items-center justify-center">
+                            <Wifi className="h-4 w-4 text-green-400" />
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white text-xs font-medium truncate">
+                              {camera.name}
+                            </h4>
+                            <p className="text-gray-400 text-xs font-mono">
+                              {camera.rtmpUrl.replace(/^rtmp:\/\//, '').split('/')[0]}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs px-1 py-0.5 bg-green-900 text-green-300 rounded">RTMP</span>
+                            <div className="w-2 h-2 rounded-full bg-green-500" title="Ready"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No cameras message */}
+              {Object.keys(allCameraSources.wyzeCameras).length === 0 && allCameraSources.rtmpCameras.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Camera className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No cameras available</p>
+                  <p className="text-xs">Add RTMP cameras in Sources tab</p>
                 </div>
               )}
             </div>
