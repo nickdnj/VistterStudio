@@ -11,10 +11,22 @@
       "enabled": true,
       "createdAt": "2025-09-10T19:15:00.000Z",
       "updatedAt": "2025-09-10T19:15:00.000Z"
+    },
+    {
+      "id": "rtmp_1757625412376",
+      "name": "Marina",
+      "type": "rtmp",
+      "rtmpUrl": "rtmp://192.168.86.23:1935/bcs/channel0_main.bcs?channel=0&stream=0",
+      "username": "Wharfside",
+      "password": "Wharfside2025!!",
+      "description": "",
+      "enabled": true,
+      "createdAt": "2025-09-11T21:16:52.376Z",
+      "updatedAt": "2025-09-11T21:16:52.376Z"
     }
   ],
   "metadata": {
     "version": "1.0.0",
-    "lastUpdated": "2025-09-10T19:15:00.000Z"
+    "lastUpdated": "2025-09-11T21:16:52.376Z"
   }
 }

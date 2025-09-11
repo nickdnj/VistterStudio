@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const BroadcastEngine = require('./BroadcastEngine');
+const RTMPProxy = require('./RTMPProxy');
 
 const app = express();
 const PORT = process.env.PORT || 19001;
@@ -12,6 +13,20 @@ app.use(express.json({ limit: '10mb' }));
 
 // Global broadcast engine instance
 let broadcastEngine = null;
+
+// Global RTMP proxy for preview streams
+let rtmpProxy = null;
+
+// Initialize RTMP proxy on startup
+async function initializeRTMPProxy() {
+  try {
+    rtmpProxy = new RTMPProxy({ port: 1936, hlsPort: 8081 });
+    await rtmpProxy.start();
+    console.log('✅ RTMP-to-HLS proxy initialized for camera previews');
+  } catch (error) {
+    console.error('❌ Failed to initialize RTMP proxy:', error);
+  }
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -145,6 +160,108 @@ app.post('/api/broadcast/update-timeline', async (req, res) => {
   }
 });
 
+// Start RTMP camera preview
+app.post('/api/preview/rtmp/start', async (req, res) => {
+  try {
+    const { rtmpUrl, streamKey } = req.body;
+
+    if (!rtmpUrl || !streamKey) {
+      return res.status(400).json({
+        error: 'RTMP URL and stream key are required'
+      });
+    }
+
+    if (!rtmpProxy) {
+      return res.status(503).json({
+        error: 'RTMP proxy not available'
+      });
+    }
+
+    // Start FFmpeg process to pull RTMP stream and push to our proxy
+    const ffmpegProcess = ffmpeg(rtmpUrl)
+      .inputOptions([
+        '-re',
+        '-timeout', '10000000'
+      ])
+      .videoCodec('copy') // Don't re-encode for preview
+      .audioCodec('copy')
+      .outputOptions([
+        '-f', 'flv'
+      ])
+      .output(`rtmp://localhost:${rtmpProxy.port}/live/${streamKey}`)
+      .on('start', (commandLine) => {
+        console.log(`🎬 RTMP preview started for ${streamKey}:`, commandLine);
+      })
+      .on('error', (error) => {
+        console.error(`❌ RTMP preview error for ${streamKey}:`, error);
+      })
+      .on('end', () => {
+        console.log(`📴 RTMP preview ended for ${streamKey}`);
+      });
+
+    ffmpegProcess.run();
+
+    // Store the process for cleanup
+    rtmpProxy.activeStreams.set(`preview_${streamKey}`, ffmpegProcess);
+
+    const hlsUrl = `http://localhost:8081/${streamKey}/index.m3u8`;
+
+    res.json({
+      message: 'RTMP preview started',
+      streamKey,
+      hlsUrl,
+      rtmpInput: rtmpUrl
+    });
+
+  } catch (error) {
+    console.error('Error starting RTMP preview:', error);
+    res.status(500).json({
+      error: 'Failed to start RTMP preview',
+      details: error.message
+    });
+  }
+});
+
+// Stop RTMP camera preview
+app.post('/api/preview/rtmp/stop', async (req, res) => {
+  try {
+    const { streamKey } = req.body;
+
+    if (!streamKey) {
+      return res.status(400).json({
+        error: 'Stream key is required'
+      });
+    }
+
+    if (!rtmpProxy) {
+      return res.status(503).json({
+        error: 'RTMP proxy not available'
+      });
+    }
+
+    const previewKey = `preview_${streamKey}`;
+    const ffmpegProcess = rtmpProxy.activeStreams.get(previewKey);
+    
+    if (ffmpegProcess) {
+      ffmpegProcess.kill('SIGTERM');
+      rtmpProxy.activeStreams.delete(previewKey);
+      console.log(`✅ RTMP preview stopped for ${streamKey}`);
+    }
+
+    res.json({
+      message: 'RTMP preview stopped',
+      streamKey
+    });
+
+  } catch (error) {
+    console.error('Error stopping RTMP preview:', error);
+    res.status(500).json({
+      error: 'Failed to stop RTMP preview',
+      details: error.message
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -169,7 +286,10 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 VistterStudio Broadcast Manager running on port ${PORT}`);
   console.log(`📺 Ready to handle live streaming requests`);
+  
+  // Initialize RTMP proxy for camera previews
+  await initializeRTMPProxy();
 });

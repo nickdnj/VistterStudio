@@ -43,7 +43,9 @@ services:
     restart: unless-stopped
     build: ./broadcast-manager
     ports:
-      - "19001:19001"
+      - "19001:19001"  # API port
+      - "19081:8081"   # HLS preview port
+      - "19036:1936"   # RTMP proxy port
     environment:
       - NODE_ENV=production
     volumes:
