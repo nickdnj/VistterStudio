@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Play, 
   Pause, 
@@ -9,11 +9,13 @@ import {
   RotateCcw,
   RotateCw,
   Trash2,
-  Repeat
+  Repeat,
+  Radio
 } from 'lucide-react';
 import { useTimelineStore } from '../state/store';
 import { TimeFormatter, TimeScale } from '../models/TimeScale';
 import { PlaybackRate } from '../models/types';
+import { io } from 'socket.io-client';
 
 interface TimelineTransportProps {
   className?: string;
@@ -43,6 +45,56 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
     canRedo,
     getDynamicDuration,
   } = useTimelineStore();
+  
+  // Broadcast state
+  const [socket, setSocket] = useState<any>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [broadcastStatus, setBroadcastStatus] = useState({
+    isLive: false,
+    isRecording: false,
+    platform: null,
+    viewers: 0,
+    uptime: 0
+  });
+  const [isStarting, setIsStarting] = useState(false);
+  
+  // Initialize broadcast connection
+  useEffect(() => {
+    const broadcastSocket = io('http://localhost:3001');
+    setSocket(broadcastSocket);
+    
+    broadcastSocket.on('connect', () => {
+      setIsConnected(true);
+    });
+    
+    broadcastSocket.on('disconnect', () => {
+      setIsConnected(false);
+    });
+    
+    broadcastSocket.on('broadcast:status', (status: any) => {
+      setBroadcastStatus(status);
+    });
+    
+    broadcastSocket.on('broadcast:started', (status: any) => {
+      setBroadcastStatus(status);
+      setIsStarting(false);
+    });
+    
+    broadcastSocket.on('broadcast:stopped', (status: any) => {
+      setBroadcastStatus(status);
+      setIsStarting(false);
+    });
+    
+    broadcastSocket.on('broadcast:error', (error: any) => {
+      console.error('Broadcast error:', error);
+      setIsStarting(false);
+      alert(`Broadcast error: ${error.message}`);
+    });
+    
+    return () => {
+      broadcastSocket.disconnect();
+    };
+  }, []);
 
   // Calculate total timeline duration dynamically based on main track
   const totalDurationMs = getDynamicDuration();
@@ -126,6 +178,88 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
   // Jump to start/end
   const jumpToStart = () => setCurrentTime(0);
   const jumpToEnd = () => setCurrentTime(totalDurationMs);
+  
+  // Broadcast functions
+  const handleGoLive = () => {
+    // Check if any platforms are configured
+    const savedCredentials = localStorage.getItem('vistter-broadcast-credentials');
+    let hasConfiguredPlatform = false;
+    
+    if (savedCredentials) {
+      try {
+        const credentials = JSON.parse(savedCredentials);
+        hasConfiguredPlatform = Object.values(credentials).some((cred: any) => 
+          cred.enabled && cred.streamKey
+        );
+      } catch (error) {
+        console.error('Error reading credentials:', error);
+      }
+    }
+    
+    if (!hasConfiguredPlatform) {
+      alert('Please configure at least one streaming platform in the Broadcast tab first!');
+      return;
+    }
+    
+    if (!isConnected) {
+      alert('Broadcast server is not connected. Please check if the broadcast service is running.');
+      return;
+    }
+    
+    // Get the first enabled platform
+    if (savedCredentials) {
+      try {
+        const credentials = JSON.parse(savedCredentials);
+        const enabledPlatform = Object.entries(credentials).find(([_, cred]: [string, any]) => 
+          cred.enabled && cred.streamKey
+        );
+        
+        if (enabledPlatform) {
+          const [platformId, creds] = enabledPlatform;
+          const savedSettings = localStorage.getItem('vistter-stream-settings');
+          const streamSettings = savedSettings ? JSON.parse(savedSettings) : {
+            resolution: '1920x1080',
+            framerate: 30,
+            bitrate: 3500
+          };
+          
+          const config = {
+            platform: platformId,
+            streamKey: (creds as any).streamKey,
+            rtmpUrl: platformId === 'custom' ? (creds as any).rtmpUrl : undefined,
+            ...streamSettings
+          };
+          
+          setIsStarting(true);
+          
+          // Send timeline data to broadcast server
+          socket?.emit('timeline:update', { tracks, clips });
+          
+          // Start broadcast
+          socket?.emit('broadcast:start', config);
+        }
+      } catch (error) {
+        console.error('Error starting broadcast:', error);
+        alert('Error starting broadcast. Please check your configuration.');
+      }
+    }
+  };
+  
+  const handleStopLive = () => {
+    socket?.emit('broadcast:stop');
+  };
+  
+  // Format time for display
+  const formatTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}:${(minutes % 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${(seconds % 60).toString().padStart(2, '0')}`;
+  };
 
   // Rate buttons
   const rateButtons: { rate: PlaybackRate; label: string }[] = [
@@ -195,6 +329,49 @@ export const TimelineTransport: React.FC<TimelineTransportProps> = ({ className 
         >
           <Repeat className="h-4 w-4" />
         </button>
+
+        {/* Go Live Button */}
+        <div className="ml-6 flex items-center space-x-2">
+          {!broadcastStatus.isLive ? (
+            <button
+              onClick={handleGoLive}
+              disabled={isStarting || !isConnected}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded-lg transition-colors font-medium"
+              title="Start live broadcast"
+            >
+              {isStarting ? (
+                <>
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  <span className="text-sm">Starting...</span>
+                </>
+              ) : (
+                <>
+                  <Radio className="h-4 w-4" />
+                  <span className="text-sm">Go Live</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 px-3 py-2 bg-red-600 rounded-lg">
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                <span className="text-white text-sm font-medium">LIVE</span>
+                {broadcastStatus.viewers > 0 && (
+                  <span className="text-red-200 text-xs">
+                    {broadcastStatus.viewers.toLocaleString()} viewers
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={handleStopLive}
+                className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors text-sm"
+                title="Stop broadcast"
+              >
+                ⏹️ Stop
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Playback rate */}
         <div className="flex items-center space-x-1 ml-4">

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3 } from 'lucide-react';
+import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3, Radio } from 'lucide-react';
 import { PropertiesDock } from '../timeline';
 import AssetManager from './AssetManager';
 import RTMPCameraManager from './RTMPCameraManager';
+import BroadcastManager from './BroadcastManager';
 
 const Sidebar = ({ 
   cameras, 
@@ -21,6 +22,7 @@ const Sidebar = ({
     { id: 'assets', name: 'Assets', icon: FolderOpen },
     { id: 'effects', name: 'Effects', icon: Layers },
     { id: 'properties', name: 'Properties', icon: Edit3 },
+    { id: 'broadcast', name: 'Broadcast', icon: Radio },
     { id: 'tools', name: 'Tools', icon: Settings },
   ];
 
@@ -193,6 +195,12 @@ const Sidebar = ({
         {activeTab === 'properties' && (
           <div className="flex-1 flex flex-col">
             <PropertiesDock className="flex-1" />
+          </div>
+        )}
+
+        {activeTab === 'broadcast' && (
+          <div className="flex-1 flex flex-col">
+            <BroadcastManager className="flex-1" />
           </div>
         )}
 

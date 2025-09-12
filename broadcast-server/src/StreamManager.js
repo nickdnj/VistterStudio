@@ -184,14 +184,14 @@ class StreamManager extends EventEmitter {
       console.log(`🎯 Streaming to: ${this.streamConfig.platform} (${rtmpDestination.replace(this.streamConfig.streamKey, '***')})`);
       
       this.ffmpegProcess = ffmpeg()
-        // Input: Raw video frames from canvas
-        .input(this.frameStream)
-        .inputOptions([
-          '-f', 'rawvideo',
-          '-pixel_format', 'rgba',
-          '-video_size', `${width}x${height}`,
-          '-framerate', framerate.toString()
-        ])
+        // For now, use a test pattern instead of raw frames
+        // This will be replaced with actual timeline rendering later
+        .input(`testsrc=duration=3600:size=${width}x${height}:rate=${framerate}`)
+        .inputOptions(['-f', 'lavfi'])
+        
+        // Add silent audio
+        .input('anullsrc=channel_layout=stereo:sample_rate=44100')
+        .inputOptions(['-f', 'lavfi'])
         
         // Video encoding options
         .videoCodec(videoCodec)
@@ -200,9 +200,9 @@ class StreamManager extends EventEmitter {
         .fps(framerate)
         .outputOptions([
           '-preset', preset,
-          '-g', (framerate * keyframeInterval).toString(), // Keyframe interval
+          '-g', (framerate * keyframeInterval).toString(),
           '-keyint_min', framerate.toString(),
-          '-sc_threshold', '0', // Disable scene change detection
+          '-sc_threshold', '0',
           '-bufsize', `${this.streamConfig.bufferSize}k`,
           '-maxrate', `${this.streamConfig.maxrate}k`,
           '-pix_fmt', 'yuv420p',
@@ -210,11 +210,11 @@ class StreamManager extends EventEmitter {
           '-level', '4.1'
         ])
         
-        // Audio options (silent for now, can be enhanced later)
+        // Audio options
         .audioCodec(audioCodec)
         .audioFrequency(44100)
         .audioChannels(2)
-        .inputOptions(['-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100'])
+        .audioBitrate('128k')
         
         // RTMP output options
         .format('flv')
