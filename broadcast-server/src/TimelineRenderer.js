@@ -33,6 +33,7 @@ class TimelineRenderer {
     this.isRendering = false;
     this.frameCount = 0;
     this.renderStartTime = null;
+    this.renderingInterval = null;
     
     console.log(`🎨 TimelineRenderer initialized: ${this.width}x${this.height}@${this.framerate}fps`);
   }
@@ -120,28 +121,31 @@ class TimelineRenderer {
   
   // Render frame at specific timeline position
   async renderFrame(timeMs) {
-    if (!this.timeline) {
-      this.renderEmptyFrame();
-      return;
-    }
-    
     try {
-      // Clear canvas
+      // Clear canvas with black background
       this.ctx.fillStyle = '#000000';
       this.ctx.fillRect(0, 0, this.width, this.height);
       
-      // Get active clips at current time
-      const activeClips = this.getActiveClips(timeMs);
-      
-      // Render clips in layer order
-      for (const clip of activeClips) {
-        await this.renderClip(clip, timeMs);
+      if (!this.timeline || !this.timeline.clips || this.timeline.clips.length === 0) {
+        // Render VistterStudio branding when no timeline
+        this.renderBrandingFrame();
+      } else {
+        // Get active clips at current time
+        const activeClips = this.getActiveClips(timeMs);
+        
+        if (activeClips.length === 0) {
+          // No active clips, show timeline waiting state
+          this.renderWaitingFrame(timeMs);
+        } else {
+          // Render active clips in layer order
+          for (const clip of activeClips) {
+            await this.renderClip(clip, timeMs);
+          }
+        }
       }
       
-      // Add timeline info overlay (for debugging)
-      if (process.env.NODE_ENV === 'development') {
-        this.renderDebugOverlay(timeMs);
-      }
+      // Add timeline info overlay
+      this.renderTimelineOverlay(timeMs);
       
       this.frameCount++;
       
@@ -245,38 +249,78 @@ class TimelineRenderer {
   
   // Render camera clip
   async renderCameraClip(clip, progress) {
-    // For now, render a camera placeholder
-    // In the future, this would show actual camera feed
-    const width = clip.width || 640;
-    const height = clip.height || 480;
+    const width = clip.width || this.width;
+    const height = clip.height || this.height;
     
-    // Camera background
-    this.ctx.fillStyle = '#1a1a1a';
+    // Professional camera display
+    const gradient = this.ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, '#1a202c');
+    gradient.addColorStop(0.5, '#2d3748');
+    gradient.addColorStop(1, '#1a202c');
+    this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, width, height);
     
-    // Camera icon
-    this.ctx.fillStyle = '#4a5568';
-    this.ctx.font = '48px Arial';
+    // Grid pattern background
+    this.ctx.strokeStyle = 'rgba(74, 85, 104, 0.3)';
+    this.ctx.lineWidth = 1;
+    const gridSize = 50;
+    
+    for (let x = 0; x <= width; x += gridSize) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, height);
+      this.ctx.stroke();
+    }
+    
+    for (let y = 0; y <= height; y += gridSize) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, y);
+      this.ctx.lineTo(width, y);
+      this.ctx.stroke();
+    }
+    
+    // Camera information display
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 64px Arial';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('📹', width / 2, height / 2);
+    this.ctx.fillText('📹', width / 2, height / 2 - 60);
     
     // Camera name
     this.ctx.fillStyle = '#ffffff';
-    this.ctx.font = '16px Arial';
-    this.ctx.fillText(clip.camera?.name || 'Camera', width / 2, height / 2 + 40);
+    this.ctx.font = 'bold 32px Arial';
+    this.ctx.fillText(clip.camera?.name || 'RTMP Camera', width / 2, height / 2 + 20);
     
-    // Live indicator
-    if (progress < 1) {
-      this.ctx.fillStyle = '#e53e3e';
-      this.ctx.beginPath();
-      this.ctx.arc(20, 20, 8, 0, Math.PI * 2);
-      this.ctx.fill();
-      
-      this.ctx.fillStyle = '#ffffff';
-      this.ctx.font = '12px Arial';
-      this.ctx.textAlign = 'left';
-      this.ctx.fillText('LIVE', 35, 25);
+    // Camera details
+    if (clip.camera) {
+      this.ctx.fillStyle = '#a0aec0';
+      this.ctx.font = '20px Arial';
+      this.ctx.fillText(`${clip.camera.host}:${clip.camera.port}`, width / 2, height / 2 + 60);
+      this.ctx.fillText(`Channel ${clip.camera.channel} • Stream ${clip.camera.stream}`, width / 2, height / 2 + 90);
     }
+    
+    // Live indicator with animation
+    const time = Date.now() / 1000;
+    const pulseAlpha = (Math.sin(time * 3) + 1) / 2 * 0.5 + 0.5;
+    
+    this.ctx.fillStyle = `rgba(229, 62, 62, ${pulseAlpha})`;
+    this.ctx.beginPath();
+    this.ctx.arc(60, 60, 20, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 14px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('LIVE', 60, 65);
+    
+    // Stream status
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    this.ctx.fillRect(width - 200, 20, 180, 60);
+    
+    this.ctx.fillStyle = '#4ade80';
+    this.ctx.font = '14px Arial';
+    this.ctx.textAlign = 'right';
+    this.ctx.fillText('🔴 RTMP ACTIVE', width - 20, 40);
+    this.ctx.fillText('📡 STREAMING', width - 20, 60);
   }
   
   // Render image clip
@@ -362,22 +406,88 @@ class TimelineRenderer {
     this.ctx.fillText(message, width / 2, height / 2 + 10);
   }
   
-  // Render empty frame (no timeline)
-  renderEmptyFrame() {
-    this.ctx.fillStyle = '#000000';
+  // Render VistterStudio branding frame
+  renderBrandingFrame() {
+    // Gradient background
+    const gradient = this.ctx.createLinearGradient(0, 0, this.width, this.height);
+    gradient.addColorStop(0, '#1a202c');
+    gradient.addColorStop(1, '#2d3748');
+    this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, this.width, this.height);
     
-    this.ctx.fillStyle = '#4a5568';
-    this.ctx.font = '48px Arial';
+    // VistterStudio logo/text
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 72px Arial';
     this.ctx.textAlign = 'center';
-    this.ctx.fillText('🎬', this.width / 2, this.height / 2 - 20);
+    this.ctx.fillText('VistterStudio', this.width / 2, this.height / 2 - 40);
     
     this.ctx.fillStyle = '#a0aec0';
-    this.ctx.font = '24px Arial';
-    this.ctx.fillText('VistterStudio', this.width / 2, this.height / 2 + 20);
+    this.ctx.font = '32px Arial';
+    this.ctx.fillText('Professional Timeline Broadcasting', this.width / 2, this.height / 2 + 20);
     
+    this.ctx.fillStyle = '#4299e1';
+    this.ctx.font = '24px Arial';
+    this.ctx.fillText('Add content to timeline to start broadcasting', this.width / 2, this.height / 2 + 80);
+    
+    // Add animated elements
+    const time = Date.now() / 1000;
+    const pulseAlpha = (Math.sin(time * 2) + 1) / 2 * 0.3 + 0.1;
+    
+    this.ctx.fillStyle = `rgba(66, 153, 225, ${pulseAlpha})`;
+    this.ctx.beginPath();
+    this.ctx.arc(this.width / 2, this.height / 2 - 100, 30, 0, Math.PI * 2);
+    this.ctx.fill();
+  }
+  
+  // Render waiting frame (timeline has no active clips)
+  renderWaitingFrame(timeMs) {
+    // Dark background
+    this.ctx.fillStyle = '#1a202c';
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    
+    // Timeline position indicator
+    this.ctx.fillStyle = '#4299e1';
+    this.ctx.font = 'bold 48px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('⏸️', this.width / 2, this.height / 2 - 40);
+    
+    this.ctx.fillStyle = '#a0aec0';
+    this.ctx.font = '28px Arial';
+    this.ctx.fillText('Timeline Playing', this.width / 2, this.height / 2 + 20);
+    
+    this.ctx.fillStyle = '#718096';
+    this.ctx.font = '20px Arial';
+    this.ctx.fillText(`No content at ${Math.round(timeMs)}ms`, this.width / 2, this.height / 2 + 60);
+  }
+  
+  // Render timeline overlay with current info
+  renderTimelineOverlay(timeMs) {
+    // Timeline info in bottom-left corner
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    this.ctx.fillRect(20, this.height - 100, 300, 80);
+    
+    this.ctx.fillStyle = '#ffffff';
     this.ctx.font = '16px Arial';
-    this.ctx.fillText('Waiting for timeline...', this.width / 2, this.height / 2 + 50);
+    this.ctx.textAlign = 'left';
+    
+    const minutes = Math.floor(timeMs / 60000);
+    const seconds = Math.floor((timeMs % 60000) / 1000);
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    this.ctx.fillText(`🎬 VistterStudio Live`, 30, this.height - 70);
+    this.ctx.fillText(`⏱️ Timeline: ${timeStr}`, 30, this.height - 50);
+    this.ctx.fillText(`🎞️ Frame: ${this.frameCount}`, 30, this.height - 30);
+    
+    // Live indicator in top-right
+    this.ctx.fillStyle = '#e53e3e';
+    this.ctx.beginPath();
+    this.ctx.arc(this.width - 50, 50, 12, 0, Math.PI * 2);
+    this.ctx.fill();
+    
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.font = 'bold 14px Arial';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('LIVE', this.width - 50, 55);
   }
   
   // Render error frame
@@ -423,13 +533,60 @@ class TimelineRenderer {
     this.streamManager = streamManager;
     this.isConnected = true;
     this.renderStartTime = Date.now();
+    
+    // Start continuous rendering loop for streaming
+    this.startRenderingLoop();
+    
     console.log('🔗 Timeline renderer connected to stream');
+  }
+  
+  // Start continuous rendering loop
+  startRenderingLoop() {
+    if (this.renderingInterval) {
+      clearInterval(this.renderingInterval);
+    }
+    
+    console.log('🎬 Starting timeline rendering loop at 30 FPS');
+    
+    let currentTimeMs = 0;
+    const frameInterval = 1000 / 30; // 30 FPS
+    
+    this.renderingInterval = setInterval(async () => {
+      if (!this.isConnected) {
+        return;
+      }
+      
+      // Render current frame
+      await this.renderFrame(currentTimeMs);
+      
+      // Advance time
+      currentTimeMs += frameInterval;
+      
+      // Loop back to start if we have a timeline
+      if (this.timeline && currentTimeMs >= (this.timeline.duration || 30000)) {
+        currentTimeMs = 0;
+      } else if (!this.timeline && currentTimeMs >= 10000) {
+        // For branding screen, loop every 10 seconds
+        currentTimeMs = 0;
+      }
+      
+    }, frameInterval);
+  }
+  
+  // Stop rendering loop
+  stopRenderingLoop() {
+    if (this.renderingInterval) {
+      clearInterval(this.renderingInterval);
+      this.renderingInterval = null;
+      console.log('⏹️ Timeline rendering loop stopped');
+    }
   }
   
   // Disconnect from stream
   disconnectFromStream() {
     this.isConnected = false;
     this.streamManager = null;
+    this.stopRenderingLoop();
     console.log('🔌 Timeline renderer disconnected from stream');
   }
   

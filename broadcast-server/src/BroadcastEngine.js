@@ -210,9 +210,20 @@ class BroadcastEngine extends EventEmitter {
       
       this.isLive = true;
       
+      // Auto-enable looping for continuous broadcast
+      if (!this.isLooping) {
+        this.isLooping = true;
+        console.log('🔄 Auto-enabled looping for broadcast');
+      }
+      
       // Auto-start playback if timeline is ready
       if (this.timeline && !this.isPlaying) {
         this.play();
+        console.log('▶️ Auto-started timeline playback for broadcast');
+      } else if (!this.timeline) {
+        // Start rendering even without timeline (shows branding)
+        this.play();
+        console.log('▶️ Started broadcast with branding screen');
       }
       
       console.log('✅ Broadcast started successfully');

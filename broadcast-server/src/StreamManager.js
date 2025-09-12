@@ -184,10 +184,14 @@ class StreamManager extends EventEmitter {
       console.log(`🎯 Streaming to: ${this.streamConfig.platform} (${rtmpDestination.replace(this.streamConfig.streamKey, '***')})`);
       
       this.ffmpegProcess = ffmpeg()
-        // For now, use a test pattern instead of raw frames
-        // This will be replaced with actual timeline rendering later
-        .input(`testsrc=duration=3600:size=${width}x${height}:rate=${framerate}`)
-        .inputOptions(['-f', 'lavfi'])
+        // Input: Raw video frames from timeline renderer
+        .input(this.frameStream)
+        .inputOptions([
+          '-f', 'rawvideo',
+          '-pix_fmt', 'rgba',
+          '-s', `${width}x${height}`,
+          '-r', framerate.toString()
+        ])
         
         // Add silent audio
         .input('anullsrc=channel_layout=stereo:sample_rate=44100')
