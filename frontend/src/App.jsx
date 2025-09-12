@@ -8,7 +8,7 @@ import Sidebar from './components/Sidebar'
 import './App.css'
 
 // API base URL - adjust for your Docker setup
-const API_BASE = 'http://localhost:18080/api'
+const API_BASE = 'http://localhost:8080/api'
 
 function App() {
   const [cameras, setCameras] = useState({})
@@ -16,8 +16,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [assets, setAssets] = useState([])
-  
-  // Legacy state removed - now handled by timeline store
   
   // Layout state
   const [sidebarWidth, setSidebarWidth] = useState(320)
@@ -41,13 +39,26 @@ function App() {
   const fetchCameras = async () => {
     try {
       setIsLoading(true)
-      const response = await axios.get(`${API_BASE}/cams`)
-      setCameras(response.data.cameras || {})
+      const response = await axios.get(`${API_BASE}/rtmp/cameras`)
+      const cameraList = response.data.cameras || []
+      
+      // Convert array to object format for compatibility with existing code
+      const camerasObj = {}
+      cameraList.forEach(camera => {
+        camerasObj[camera.id] = {
+          ...camera,
+          nickname: camera.name,
+          mac: camera.id,
+          type: 'rtmp'
+        }
+      })
+      
+      setCameras(camerasObj)
       
       // Auto-select first camera
-      const firstCamera = Object.keys(response.data.cameras || {})[0]
-      if (firstCamera) {
-        setSelectedCamera(firstCamera)
+      const firstCameraId = Object.keys(camerasObj)[0]
+      if (firstCameraId) {
+        setSelectedCamera(firstCameraId)
       }
     } catch (err) {
       setError('Failed to fetch cameras')
@@ -57,36 +68,29 @@ function App() {
     }
   }
 
-  const getStreamUrl = (camera, type = 'hls') => {
-    if (!camera) return ''
+  const getStreamUrl = async (camera, type = 'rtmp') => {
+    if (!camera || camera.type !== 'rtmp') return ''
     
-    // Check if this is a v4 camera that needs WebRTC
-    const isV4Camera = camera.product_model === 'HL_CAM4'
-    
-    if (isV4Camera && type === 'webrtc') {
-      // v4 cameras use WebRTC endpoints
-      return `http://localhost:15001/webrtc/${camera.name_uri}`
+    try {
+      // Get the RTMP stream URL from the API
+      const response = await axios.get(`${API_BASE}/rtmp/cameras/${camera.id}/stream`)
+      return response.data.streamUrl
+    } catch (error) {
+      console.error('Error getting stream URL:', error)
+      return ''
     }
-    
-    // Convert internal URLs to external accessible URLs for v4fix bridge
-    const url = camera[`${type}_url`] || ''
-    return url.replace('wyze-bridge:', 'localhost:')
-      .replace(':8889', ':18889') // HLS port for v4fix
-      .replace(':8555', ':18555') // RTSP port for v4fix  
-      .replace(':1935', ':11935') // RTMP port unchanged
   }
 
   // Get the appropriate stream type for camera
   const getStreamType = (camera) => {
-    if (!camera) return 'hls'
+    if (!camera) return 'rtmp'
     
-    // v4 cameras should use WebRTC when available
-    if (camera.product_model === 'HL_CAM4') {
-      return 'webrtc'
+    // RTMP cameras use RTMP streams
+    if (camera.type === 'rtmp') {
+      return 'rtmp'
     }
     
-    // Legacy cameras use HLS/RTSP
-    return 'hls'
+    return 'rtmp'
   }
 
   // Get timeline preview data using the new timeline system
@@ -187,6 +191,7 @@ function App() {
               console.log('Asset selected:', asset)
               fetchAssets() // Refresh assets if needed
             }}
+            onCamerasUpdate={fetchCameras}
             className="h-full"
           />
         </div>

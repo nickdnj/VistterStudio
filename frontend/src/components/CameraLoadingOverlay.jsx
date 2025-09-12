@@ -8,7 +8,7 @@ const CameraLoadingOverlay = ({
   camera, 
   isLoading, 
   thumbnail = null, 
-  streamType = 'webrtc',
+  streamType = 'rtmp',
   className = "",
   onTransitionComplete 
 }) => {
@@ -45,7 +45,7 @@ const CameraLoadingOverlay = ({
               Loading {camera?.nickname || 'Camera'}...
             </p>
             <p className="text-xs text-gray-300">
-              {streamType === 'webrtc' ? 'WebRTC stream starting' : 'HLS stream starting'}
+              {streamType === 'rtmp' ? 'RTMP stream starting' : `${streamType.toUpperCase()} stream starting`}
             </p>
             
             {/* Progress Dots */}

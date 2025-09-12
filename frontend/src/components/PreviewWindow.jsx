@@ -4,6 +4,7 @@ import { useTimelineStore } from '../timeline';
 import { TimeFormatter } from '../timeline';
 import { calculateTransitionState } from '../timeline/utils/transitions';
 import VideoPlayer from './VideoPlayer';
+import MJPEGStream from './MJPEGStream';
 
 const PreviewWindow = ({ 
   previewContent, 
@@ -93,28 +94,27 @@ const PreviewWindow = ({
           <div className="relative w-full max-w-4xl mx-auto" style={{ aspectRatio: '16/9' }}>
             {/* Main Content */}
             {previewContent.type === 'camera' ? (
-              previewContent.camera.product_model === 'HL_CAM4' ? (
-                // v4 cameras use WebRTC iframe
-                <iframe
-                  key={`webrtc-${previewContent.camera.mac}`}
-                  src={getStreamUrl(previewContent.camera, 'webrtc')}
-                  className="w-full h-full rounded border-0"
-                  allow="camera; microphone; autoplay"
+              previewContent.camera.type === 'rtmp' ? (
+                // RTMP cameras with MJPEG preview
+                <MJPEGStream
+                  camera={previewContent.camera}
+                  className="w-full h-full rounded"
+                  showFallback={true}
                 />
               ) : (
-                // Legacy cameras use HLS
-                <VideoPlayer
-                  key={`camera-${previewContent.camera.mac}`}
-                  src={getStreamUrl(previewContent.camera, 'hls')}
-                  className="w-full h-full rounded"
-                  autoPlay={isPlaying}
-                  muted={isMuted}
-                />
+                // Unknown camera type fallback
+                <div className="w-full h-full rounded flex items-center justify-center bg-gray-900">
+                  <div className="text-center text-white">
+                    <div className="text-6xl mb-4">❓</div>
+                    <h3 className="text-xl font-semibold mb-2">Unknown Camera</h3>
+                    <p className="text-sm text-gray-400">Type: {previewContent.camera.type || 'Unknown'}</p>
+                  </div>
+                </div>
               )
             ) : previewContent.type === 'asset' && previewContent.asset.category === 'videos' ? (
               <video
                 key={`asset-${previewContent.asset.id}`}
-                src={`http://localhost:18080${previewContent.asset.url}`}
+                src={`http://localhost:8080${previewContent.asset.url}`}
                 className="w-full h-full rounded object-contain"
                 autoPlay={isPlaying}
                 muted={isMuted}
@@ -123,7 +123,7 @@ const PreviewWindow = ({
             ) : previewContent.type === 'asset' && previewContent.asset.category === 'images' ? (
               <img
                 key={`asset-${previewContent.asset.id}`}
-                src={`http://localhost:18080${previewContent.asset.url}`}
+                src={`http://localhost:8080${previewContent.asset.url}`}
                 alt={previewContent.asset.originalName}
                 className="w-full h-full rounded object-contain"
               />
@@ -171,7 +171,7 @@ const PreviewWindow = ({
                 return (
                   <img
                     key={`overlay-${overlay.id}`}
-                    src={`http://localhost:18080${overlay.asset.url}`}
+                    src={`http://localhost:8080${overlay.asset.url}`}
                     alt={overlay.asset.originalName}
                     className="absolute top-1/2 left-1/2 object-contain rounded transition-all duration-100 ease-out"
                     style={{

@@ -64,7 +64,7 @@ function TrackElement({ element, timeScale, onUpdate, onRemove }: TrackElementPr
       <div className="flex items-center h-full px-2 space-x-2">
         {element.type === 'images' && element.asset?.url ? (
           <img
-            src={`http://localhost:18080${element.asset.url}`}
+            src={`http://localhost:8080${element.asset.url}`}
             alt={element.asset.originalName}
             className="h-8 w-8 object-cover rounded flex-shrink-0"
           />

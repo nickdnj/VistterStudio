@@ -19,7 +19,7 @@ const AssetManager = ({ isOpen, onClose, onSelectAsset }) => {
   const fetchAssets = async () => {
     try {
       const params = selectedCategory !== 'all' ? { category: selectedCategory } : {};
-      const response = await axios.get('http://localhost:18080/api/assets', { params });
+      const response = await axios.get('http://localhost:8080/api/assets', { params });
       setAssets(response.data.assets || []);
       setCategories(response.data.categories || {});
     } catch (error) {
@@ -39,7 +39,7 @@ const AssetManager = ({ isOpen, onClose, onSelectAsset }) => {
       formData.append('file', file);
 
       try {
-        await axios.post('http://localhost:18080/api/assets/upload', formData, {
+        await axios.post('http://localhost:8080/api/assets/upload', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
           onUploadProgress: (progressEvent) => {
             const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -60,7 +60,7 @@ const AssetManager = ({ isOpen, onClose, onSelectAsset }) => {
     if (!confirm('Are you sure you want to delete this asset?')) return;
 
     try {
-      await axios.delete(`http://localhost:18080/api/assets/${assetId}`);
+      await axios.delete(`http://localhost:8080/api/assets/${assetId}`);
       fetchAssets();
     } catch (error) {
       console.error('Error deleting asset:', error);
@@ -179,14 +179,14 @@ const AssetManager = ({ isOpen, onClose, onSelectAsset }) => {
                   <div className="aspect-square bg-gray-900 flex items-center justify-center relative">
                     {asset.mimetype.startsWith('image/') ? (
                       <img
-                        src={`http://localhost:18080${asset.url}`}
+                        src={`http://localhost:8080${asset.url}`}
                         alt={asset.originalName}
                         className="w-full h-full object-cover"
                       />
                     ) : asset.mimetype.startsWith('video/') ? (
                       <div className="relative w-full h-full">
                         <video
-                          src={`http://localhost:18080${asset.url}`}
+                          src={`http://localhost:8080${asset.url}`}
                           className="w-full h-full object-cover"
                           muted
                         />

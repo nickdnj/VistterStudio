@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Camera, FolderOpen, Layers, Settings, Palette, Type, Music, Image, Video, FileText, Edit3 } from 'lucide-react';
 import { PropertiesDock } from '../timeline';
 import AssetManager from './AssetManager';
+import RTMPCameraManager from './RTMPCameraManager';
 
 const Sidebar = ({ 
   cameras, 
@@ -9,6 +10,7 @@ const Sidebar = ({
   onSelectCamera, 
   assets = [],
   onAssetSelect,
+  onCamerasUpdate,
   className = "" 
 }) => {
   const [activeTab, setActiveTab] = useState('cameras');
@@ -78,63 +80,12 @@ const Sidebar = ({
       <div className="flex-1 overflow-y-auto flex flex-col">
         {activeTab === 'cameras' && (
           <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-white">Camera Feeds</h3>
-              <span className="text-xs text-gray-400">
-                {Object.keys(cameras).length} cameras
-              </span>
-            </div>
-            
-            <div className="space-y-2">
-              {Object.entries(cameras).map(([cameraId, camera]) => (
-                <div
-                  key={cameraId}
-                  draggable
-                  onDragStart={(e) => {
-                    console.log('Dragging camera:', { cameraId, camera });
-                    e.dataTransfer.setData('text/plain', JSON.stringify({
-                      type: 'camera',
-                      cameraId,
-                      camera
-                    }));
-                  }}
-                  onClick={() => onSelectCamera(cameraId)}
-                  className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-move transition-colors group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center">
-                      <Camera className="h-4 w-4 text-gray-400" />
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-white text-xs font-medium truncate">
-                        {camera.nickname}
-                      </h4>
-                      <p className="text-gray-400 text-xs">
-                        {camera.model_name} • {camera.is_2k ? '2K' : 'HD'}
-                      </p>
-                    </div>
-                    
-                    <div className={`h-2 w-2 rounded-full ${
-                      camera.enabled ? 'bg-green-500' : 'bg-gray-500'
-                    }`}></div>
-                  </div>
-                </div>
-              ))}
-              
-              {Object.keys(cameras).length === 0 && (
-                <div className="text-center py-8">
-                  <Camera className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400 text-sm">No cameras found</p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="text-primary text-xs hover:text-blue-400 mt-2"
-                  >
-                    Refresh
-                  </button>
-                </div>
-              )}
-            </div>
+            <RTMPCameraManager
+              cameras={cameras}
+              onCamerasUpdate={onCamerasUpdate}
+              onCameraSelect={onSelectCamera}
+              selectedCamera={selectedCamera}
+            />
           </div>
         )}
 
@@ -163,7 +114,7 @@ const Sidebar = ({
                     <div className="flex items-center space-x-3">
                       {asset.category === 'images' ? (
                         <img
-                          src={`http://localhost:18080${asset.url}`}
+                          src={`http://localhost:8080${asset.url}`}
                           alt={asset.originalName}
                           className="w-8 h-8 object-cover rounded"
                         />

@@ -1,39 +1,39 @@
 services:
-  wyze-bridge:
-    container_name: wyze-bridge
-    restart: unless-stopped
-    build:
-      context: ./wyze-bridge-v4fix
-      dockerfile: docker/Dockerfile
-    ports:
-      - "11935:1935" # RTMP
-      - "18555:8555" # RTSP (v4fix uses 8555)
-      - "18889:8889" # HLS (v4fix uses 8889)
-      - "18890:8890" # WebRTC (new for v4 cameras)
-      - "15001:5000" # API (bridge runs on 5000 internally)
-    environment:
-      - WB_AUTH=False
-      - WYZE_EMAIL=${WYZE_EMAIL}
-      - WYZE_PASSWORD=${WYZE_PASSWORD}
-      - API_ID=${API_ID}
-      - API_KEY=${API_KEY}
-  
   vistterstudio:
     container_name: vistterstudio
     restart: unless-stopped
     build: ./server
     ports:
-      - "18080:8080"
+      - "8080:8080"
     volumes:
       - ./server/assets:/usr/src/app/assets
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+
+  broadcast-server:
+    container_name: vistterstudio-broadcast
+    restart: unless-stopped
+    build: ./broadcast-server
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./broadcast-server/recordings:/usr/src/app/recordings
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
     depends_on:
-      - wyze-bridge
+      - vistterstudio
 
   frontend:
     container_name: vistterstudio-frontend
     restart: unless-stopped
     build: ./frontend
     ports:
-      - "19000:80"
+      - "5173:80"
     depends_on:
       - vistterstudio
+      - broadcast-server
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+      - VITE_BROADCAST_URL=http://localhost:3001

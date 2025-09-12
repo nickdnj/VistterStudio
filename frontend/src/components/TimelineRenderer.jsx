@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import VideoPlayer from './VideoPlayer';
 import CameraLoadingOverlay from './CameraLoadingOverlay';
+import MJPEGStream from './MJPEGStream';
 import thumbnailCache from '../utils/thumbnailCache';
 
 /**
@@ -31,7 +32,6 @@ const TimelineRenderer = ({
   useEffect(() => {
     if (currentContent?.type === 'camera') {
       const streamId = currentContent.cameraId;
-      const streamUrl = getStreamUrl(currentContent.camera, 'webrtc');
       
       // Load cached thumbnail if available
       const cachedThumbnail = thumbnailCache.get(streamId);
@@ -44,7 +44,7 @@ const TimelineRenderer = ({
         setStreamStates(prev => ({ ...prev, [streamId]: 'loading' }));
       }
     }
-  }, [currentContent, getStreamUrl, preloadedStreams, streamStates, thumbnails]);
+  }, [currentContent, preloadedStreams, streamStates, thumbnails]);
 
   // Sync video playback with timeline time for video assets
   useEffect(() => {
@@ -146,8 +146,8 @@ const TimelineRenderer = ({
       const streamState = streamStates[streamId] || 'loading';
       const isStreamReady = streamState === 'ready' || preloadedStreams[streamId];
       
-      // Handle v4 cameras with WebRTC
-      if (camera.product_model === 'HL_CAM4') {
+      // Handle RTMP cameras (try MJPEG first, fallback to placeholder)
+      if (camera.type === 'rtmp') {
         const shouldShowLoading = !isStreamReady || transitionDelays[streamId];
         const cameraThumb = thumbnails[streamId];
         
@@ -158,62 +158,37 @@ const TimelineRenderer = ({
               camera={camera}
               isLoading={shouldShowLoading}
               thumbnail={cameraThumb}
-              streamType="webrtc"
+              streamType="rtmp"
             />
             
-            {/* WebRTC Stream */}
-            <iframe
-              key={`timeline-webrtc-${camera.mac}-${currentContent.startTime}`}
-              src={getStreamUrl(camera, 'webrtc')}
-              className={`w-full h-full rounded border-0 transition-opacity duration-500 ${
-                shouldShowLoading ? 'opacity-0' : 'opacity-100'
-              }`}
-              allow="camera; microphone; autoplay"
-              title={`${camera.nickname} WebRTC Stream`}
-              onLoad={() => {
-                // Add delay to simulate stream startup time, then mark as ready
-                setTimeout(() => handleStreamReady(streamId), 2000);
-              }}
-              onError={() => handleStreamError(streamId)}
-            />
+            {/* Try MJPEG Stream first, fallback to RTMP placeholder */}
+            <div className={`w-full h-full rounded transition-opacity duration-500 ${
+              shouldShowLoading ? 'opacity-0' : 'opacity-100'
+            }`}>
+              <MJPEGStream
+                camera={camera}
+                className="w-full h-full rounded"
+                onLoad={() => handleStreamReady(streamId)}
+                onError={() => {
+                  console.log('MJPEG failed, showing RTMP placeholder for', camera.name);
+                  // Still mark as ready so loading overlay disappears
+                  handleStreamReady(streamId);
+                }}
+                showFallback={true}
+              />
+            </div>
           </div>
         );
       }
       
-      // Handle legacy cameras with HLS
-      const shouldShowLoading = !isStreamReady || transitionDelays[streamId];
-      const cameraThumb = thumbnails[streamId];
-      
+      // Fallback for unknown camera types
       return (
-        <div className="w-full h-full relative">
-          {/* Enhanced Loading Overlay with Thumbnail */}
-          <CameraLoadingOverlay
-            camera={camera}
-            isLoading={shouldShowLoading}
-            thumbnail={cameraThumb}
-            streamType="hls"
-          />
-          
-          {/* HLS Stream */}
-          <VideoPlayer
-            key={`timeline-hls-${camera.mac}-${currentContent.startTime}`}
-            src={getStreamUrl(camera, 'hls')}
-            className={`w-full h-full rounded transition-opacity duration-500 ${
-              shouldShowLoading ? 'opacity-0' : 'opacity-100'
-            }`}
-            autoPlay={isPlaying}
-            muted={isMuted}
-            onLoadStart={(videoElement) => {
-              // Pass the video element for thumbnail capture
-              handleStreamReady(streamId, videoElement);
-            }}
-            onError={() => handleStreamError(streamId)}
-            ref={(videoElement) => {
-              if (videoElement) {
-                videoRefs.current[streamId] = videoElement;
-              }
-            }}
-          />
+        <div className="w-full h-full flex items-center justify-center bg-gray-900 rounded">
+          <div className="text-center text-white">
+            <div className="text-4xl mb-4">❓</div>
+            <h3 className="text-lg font-semibold mb-2">Unknown Camera Type</h3>
+            <p className="text-sm text-gray-400">{camera.type || 'No type specified'}</p>
+          </div>
         </div>
       );
     }
@@ -224,7 +199,7 @@ const TimelineRenderer = ({
         <video
           key={`timeline-video-${currentContent.asset.id}-${currentContent.startTime}`}
           ref={el => videoRefs.current[currentContent.id] = el}
-          src={`http://localhost:18080${currentContent.asset.url}`}
+          src={`http://localhost:8080${currentContent.asset.url}`}
           className="w-full h-full rounded object-contain"
           autoPlay={isPlaying}
           muted={isMuted}
@@ -241,7 +216,7 @@ const TimelineRenderer = ({
       return (
         <img
           key={`timeline-image-${currentContent.asset.id}-${currentContent.startTime}`}
-          src={`http://localhost:18080${currentContent.asset.url}`}
+          src={`http://localhost:8080${currentContent.asset.url}`}
           alt={currentContent.asset.originalName}
           className="w-full h-full rounded object-contain"
         />
@@ -277,7 +252,7 @@ const TimelineRenderer = ({
             overlay.asset.category === 'images' ? (
               <div className="flex items-center space-x-3">
                 <img
-                  src={`http://localhost:18080${overlay.asset.url}`}
+                  src={`http://localhost:8080${overlay.asset.url}`}
                   alt={overlay.asset.originalName}
                   className="w-16 h-10 object-contain rounded"
                 />
@@ -326,7 +301,7 @@ const TimelineRenderer = ({
       <audio
         key={`timeline-audio-${audioElement.id}-${audioElement.startTime}`}
         ref={el => audioRefs.current[audioElement.id] = el}
-        src={audioElement.asset ? `http://localhost:18080${audioElement.asset.url}` : ''}
+        src={audioElement.asset ? `http://localhost:8080${audioElement.asset.url}` : ''}
         muted={isMuted}
         style={{ display: 'none' }}
       />
