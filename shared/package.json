@@ -1,0 +1,18 @@
+{
+  "name": "@vistterstudio/shared",
+  "version": "1.0.0",
+  "description": "Shared types, schemas, and utilities for VistterStudio",
+  "main": "types/index.ts",
+  "types": "types/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "dependencies": {
+    "ajv": "^8.12.0"
+  }
+}

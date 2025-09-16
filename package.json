@@ -1,6 +1,40 @@
 {
-  "dependencies": {
-    "axios": "^1.12.1",
-    "socket.io-client": "^4.8.1"
-  }
+  "name": "vistterstudio",
+  "version": "1.0.0",
+  "description": "Transform your scenic location into a compelling digital destination through automated place-based visual storytelling",
+  "private": true,
+  "workspaces": [
+    "cloud-editor",
+    "broadcast-node",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=cloud-editor",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "install-all": "npm install --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nickdnj/VistterStudio.git"
+  },
+  "keywords": [
+    "livestreaming",
+    "timeline",
+    "broadcasting",
+    "raspberry-pi",
+    "visual-storytelling",
+    "place-based"
+  ],
+  "author": "VistterStudio Team",
+  "license": "MIT"
 }

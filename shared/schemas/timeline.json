@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VistterStudio Timeline Segment",
+  "description": "JSON schema for timeline segments exported from cloud editor to broadcast nodes",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version for compatibility"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "duration": { "type": "number" },
+        "created": { "type": "string", "format": "date-time" },
+        "updated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "duration"]
+    },
+    "tracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["video", "overlay", "audio", "ad"] },
+          "clips": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "startTime": { "type": "number" },
+                "endTime": { "type": "number" },
+                "asset": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string", "enum": ["static", "dynamic", "ad"] },
+                    "path": { "type": "string" },
+                    "apiConfig": { "type": "object" },
+                    "placeholders": { "type": "object" }
+                  }
+                },
+                "position": {
+                  "type": "object",
+                  "properties": {
+                    "x": { "type": "number" },
+                    "y": { "type": "number" },
+                    "width": { "type": "number" },
+                    "height": { "type": "number" }
+                  }
+                }
+              },
+              "required": ["id", "startTime", "endTime", "asset"]
+            }
+          }
+        },
+        "required": ["id", "type", "clips"]
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["image", "video", "audio", "ad"] },
+          "path": { "type": "string" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["id", "type", "path"]
+      }
+    },
+    "apiConfigs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["weather", "tide", "ad"] },
+          "endpoint": { "type": "string" },
+          "apiKey": { "type": "string" },
+          "mapping": { "type": "object" }
+        },
+        "required": ["id", "type", "endpoint"]
+      }
+    }
+  },
+  "required": ["version", "metadata", "tracks"]
+}
