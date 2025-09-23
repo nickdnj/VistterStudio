@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
   Video,
@@ -66,6 +66,15 @@ const formatTime = (seconds) => {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
+const buildReolinkRtmpUrl = (camera) => {
+  const streamType = camera.stream === 0 ? 'main' : 'sub';
+  return `rtmp://${camera.ipAddress}:${camera.rtmpPort}/bcs/channel${camera.channel}_${streamType}.bcs?channel=${camera.channel}&stream=${camera.stream}&user=${camera.username}&password=${camera.password}`;
+};
+
+const buildReolinkSnapshotUrl = (camera) => {
+  return `http://${camera.ipAddress}:${camera.httpPort}/cgi-bin/api.cgi?cmd=Snap&channel=${camera.channel}&rs=vistter&user=${camera.username}&password=${camera.password}`;
+};
+
 const computeMaxEnd = (tracks) => {
   let max = 0;
   tracks.forEach((track) => {
@@ -108,23 +117,16 @@ const defaultSegment = () => ({
 const initialCameras = [
   {
     id: 'camera-1',
-    name: 'North Pier',
-    streamUrl: 'rtmp://live.example.com/northpier',
-    snapshotUrl: 'https://picsum.photos/seed/northpier/1920/1080',
+    name: 'Reolink Camera',
+    type: 'reolink', // Add camera type
+    ipAddress: '192.168.86.250',
+    rtmpPort: 1935,
+    httpPort: 80,
+    username: 'Wharfside',
+    password: 'Wharfside2025!!',
+    channel: 0,
+    stream: 0, // 0 for main, 1 for sub
     status: 'Idle',
-    zoom: 1.2,
-    pan: 0,
-    tilt: -2,
-  },
-  {
-    id: 'camera-2',
-    name: 'Harbor Entrance',
-    streamUrl: 'rtmp://live.example.com/harbor',
-    snapshotUrl: 'https://picsum.photos/seed/harbor/1920/1080',
-    status: 'Active',
-    zoom: 1.0,
-    pan: 8,
-    tilt: 1,
   },
 ];
 
@@ -143,7 +145,15 @@ const TimelineEditor = () => {
   const [cameras, setCameras] = useState(initialCameras);
   const [selectedCameraId, setSelectedCameraId] = useState(null);
   const [selectedClipRef, setSelectedClipRef] = useState(null);
-  const [currentSegment, setCurrentSegment] = useState(defaultSegment());
+  const [currentSegment, setCurrentSegment] = useState(() => {
+    const saved = localStorage.getItem('vistterStudio_currentSegment');
+    try {
+      return saved ? JSON.parse(saved) : defaultSegment();
+    } catch (e) {
+      console.error("Error reading from localStorage", e);
+      return defaultSegment();
+    }
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -152,6 +162,7 @@ const TimelineEditor = () => {
   const [dragState, setDragState] = useState(null);
   const timelineRef = useRef(null);
   const [timelineWidth, setTimelineWidth] = useState(0);
+
 
   const segmentDuration = useMemo(() => {
     const maxEnd = computeMaxEnd(currentSegment.tracks);
@@ -170,6 +181,10 @@ const TimelineEditor = () => {
     }
     return 60; // default to 1m
   }, [zoomPreset]);
+
+  useEffect(() => {
+    localStorage.setItem('vistterStudio_currentSegment', JSON.stringify(currentSegment));
+  }, [currentSegment]);
 
   useEffect(() => {
     loadSegments();
@@ -225,6 +240,12 @@ const TimelineEditor = () => {
 
     const handleMove = (event) => {
       event.preventDefault();
+
+      if (dragState.mode === 'scrub') {
+        handleScrub(event);
+        return;
+      }
+
       const clip = getClip(dragState.trackId, dragState.clipId);
       if (!clip || totalDuration === 0) return;
       const deltaSeconds = ((event.clientX - dragState.startClientX) / timelineWidth) * totalDuration;
@@ -238,21 +259,18 @@ const TimelineEditor = () => {
           startTime: newStart,
           endTime: newEnd,
         }));
-        setCurrentTime(newStart);
       } else if (dragState.mode === 'resize-start') {
         const newStart = clamp(dragState.originalStart + deltaSeconds, 0, dragState.originalEnd - MIN_CLIP_DURATION);
         updateClip(dragState.trackId, dragState.clipId, (current) => ({
           ...current,
           startTime: newStart,
         }));
-        setCurrentTime(newStart);
       } else if (dragState.mode === 'resize-end') {
         const newEnd = clamp(dragState.originalEnd + deltaSeconds, dragState.originalStart + MIN_CLIP_DURATION, segmentDuration);
         updateClip(dragState.trackId, dragState.clipId, (current) => ({
           ...current,
           endTime: newEnd,
         }));
-        setCurrentTime(newEnd);
       }
     };
 
@@ -425,13 +443,16 @@ const TimelineEditor = () => {
     const newId = generateId('camera');
     const newCamera = {
       id: newId,
-      name: `Camera ${cameras.length + 1}`,
-      streamUrl: 'rtmp://new.camera/live/stream',
-      snapshotUrl: `https://picsum.photos/seed/${newId}/1920/1080`,
+      name: `New Camera ${cameras.length + 1}`,
+      type: 'reolink',
+      ipAddress: '192.168.0.100',
+      rtmpPort: 1935,
+      httpPort: 80,
+      username: 'admin',
+      password: '',
+      channel: 0,
+      stream: 0,
       status: 'Idle',
-      zoom: 1.0,
-      pan: 0,
-      tilt: 0,
     };
     setCameras((prev) => [...prev, newCamera]);
   };
@@ -467,8 +488,9 @@ const TimelineEditor = () => {
       endTime: dropTime + 10, // 10-second default duration
       asset: {
         type: 'camera',
-        liveUrl: dragState.camera.streamUrl,
-        snapshotUrl: dragState.camera.snapshotUrl,
+        liveUrl: buildReolinkRtmpUrl(dragState.camera),
+        snapshotUrl: buildReolinkSnapshotUrl(dragState.camera),
+        camera: dragState.camera, // Store camera details
       },
       opacity: 100,
       position: { x: 0, y: 0, width: 1920, height: 1080 },
@@ -593,6 +615,20 @@ const TimelineEditor = () => {
     return active;
   }, [currentTime, currentSegment.tracks]);
 
+  const handleScrub = useCallback((event) => {
+    if (!timelineRef.current) return;
+    const timelineRect = timelineRef.current.getBoundingClientRect();
+    if (timelineRect.width === 0) return;
+    const newTime = clamp(
+      ((event.clientX - timelineRect.left) / timelineRect.width) * totalDuration,
+      0,
+      segmentDuration
+    );
+    setCurrentTime(newTime);
+  }, [totalDuration, segmentDuration]);
+
+
+
   const activeDrawerMeta = DRAWERS.find((drawer) => drawer.key === activeDrawer) || DRAWERS[0];
   const ActiveDrawerIcon = activeDrawerMeta.icon;
 
@@ -624,12 +660,7 @@ const TimelineEditor = () => {
                   </button>
                 </div>
               </div>
-              <p className="mt-1 truncate text-[11px] text-slate-400">{camera.streamUrl}</p>
-              <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
-                <span>Zoom {camera.zoom}</span>
-                <span>Pan {camera.pan}</span>
-                <span>Tilt {camera.tilt}</span>
-              </div>
+              <p className="mt-1 truncate text-[11px] text-slate-400">{camera.ipAddress}</p>
               <button
                 onClick={() => {
                   setSelectedCameraId(camera.id);
@@ -688,6 +719,7 @@ const TimelineEditor = () => {
 
     if (activeDrawer === 'properties') {
       if (selectedCamera) {
+        const streamTypes = [{ label: 'Main (High Quality)', value: 0 }, { label: 'Sub (Low Quality)', value: 1 }];
         return (
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between">
@@ -696,32 +728,64 @@ const TimelineEditor = () => {
                 clear
               </button>
             </div>
-            <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Camera Name</label>
-            <input
-              type="text"
-              value={selectedCamera.name}
-              onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'name', e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
-            />
-            <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Stream URL</label>
-            <input
-              type="text"
-              value={selectedCamera.streamUrl}
-              onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'streamUrl', e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
-            />
-            <div className="grid grid-cols-3 gap-2">
-              {['zoom', 'pan', 'tilt'].map((field) => (
-                <div key={field}>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">{field}</label>
-                  <input
-                    type="number"
-                    value={selectedCamera[field] ?? 0}
-                    onChange={(e) => handleCameraFieldChange(selectedCamera.id, field, parseFloat(e.target.value))}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-2 py-2 text-slate-100"
-                  />
-                </div>
-              ))}
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Camera Name</label>
+              <input
+                type="text"
+                value={selectedCamera.name}
+                onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'name', e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">IP Address</label>
+              <input
+                type="text"
+                value={selectedCamera.ipAddress}
+                onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'ipAddress', e.target.value)}
+                className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Username</label>
+                <input
+                  type="text"
+                  value={selectedCamera.username}
+                  onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'username', e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Password</label>
+                <input
+                  type="password"
+                  value={selectedCamera.password}
+                  onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'password', e.target.value)}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Channel</label>
+                <input
+                  type="number"
+                  value={selectedCamera.channel}
+                  onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'channel', parseInt(e.target.value, 10))}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-2 py-2 text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wide text-slate-500">Stream</label>
+                <select
+                  value={selectedCamera.stream}
+                  onChange={(e) => handleCameraFieldChange(selectedCamera.id, 'stream', parseInt(e.target.value, 10))}
+                  className="w-full rounded-lg border border-slate-700 bg-slate-900/80 px-2 py-2 text-slate-100"
+                >
+                  {streamTypes.map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                </select>
+              </div>
             </div>
           </div>
         );
@@ -1015,10 +1079,45 @@ const TimelineEditor = () => {
             </div>
           </div>
 
-          <div className="px-6 py-4">
-            <div className="grid grid-cols-[160px_1fr] items-center text-xs text-slate-500">
-              <div className="text-right pr-4 tracking-widest">Time</div>
-              <div className="relative h-8 rounded-lg border border-slate-800 bg-slate-900/60">
+          <div className="grid grid-cols-[160px_1fr] gap-x-4">
+            {/* LABELS */}
+            <div className="space-y-3 pt-12">
+              {currentSegment.tracks.map((track) => {
+                const accent = TYPE_ACCENT[track.type] || 'text-slate-400';
+                return (
+                  <div key={track.id} className="flex h-12 flex-col items-end justify-center gap-1 pr-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-lg leading-none ${accent}`}>●</span>
+                      <div className="text-right">
+                        <p className="font-semibold uppercase tracking-wide text-slate-200">{track.name}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">{track.type}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Eye className="h-3 w-3" />
+                        <Lock className="h-3 w-3" />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addClipToTrack(track.id)}
+                      className="rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-200 hover:bg-slate-700"
+                    >
+                      + Clip
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* TIMELINE */}
+            <div className="relative w-full" ref={timelineRef}>
+              {/* Ruler */}
+              <div
+                onMouseDown={(e) => {
+                  setDragState({ mode: 'scrub' });
+                  handleScrub(e);
+                }}
+                className="relative h-8 rounded-lg border border-slate-800 bg-slate-900/60 cursor-pointer"
+              >
                 {timelineMarkers.map((marker) => (
                   <div
                     key={marker.ratio}
@@ -1030,40 +1129,29 @@ const TimelineEditor = () => {
                     </span>
                   </div>
                 ))}
+              </div>
+
+              {/* Playhead */}
+              <div
+                className="pointer-events-none absolute top-8 bottom-0 z-20 w-0.5 bg-rose-500"
+                style={{ left: `${playheadPosition}%` }}
+              >
                 <div
-                  className="pointer-events-none absolute top-0 bottom-0 border-l-2 border-rose-500"
-                  style={{ left: `${playheadPosition}%` }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    setDragState({ mode: 'scrub' });
+                  }}
+                  className="pointer-events-auto absolute -top-1 -translate-x-1/2 w-4 h-4 rounded-full bg-rose-500 border-2 border-slate-900 cursor-ew-resize"
                 />
               </div>
-            </div>
 
-            <div className="relative mt-4 space-y-3">
-              {currentSegment.tracks.map((track, index) => {
-                const accent = TYPE_ACCENT[track.type] || 'text-slate-400';
-                const clipColor = TRACK_COLORS[track.type] || 'bg-slate-500/80 border-slate-400/40';
-                return (
-                  <div key={track.id} className="grid grid-cols-[160px_1fr] items-center gap-4 text-xs text-slate-300">
-                    <div className="flex flex-col items-end gap-2 pr-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-lg leading-none ${accent}`}>●</span>
-                        <div className="text-right">
-                          <p className="font-semibold uppercase tracking-wide text-slate-200">{track.name}</p>
-                          <p className="text-[10px] uppercase tracking-widest text-slate-500">{track.type}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-500">
-                          <Eye className="h-3 w-3" />
-                          <Lock className="h-3 w-3" />
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => addClipToTrack(track.id)}
-                        className="rounded bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-wide text-slate-200 hover:bg-slate-700"
-                      >
-                        + Clip
-                      </button>
-                    </div>
+              {/* Tracks */}
+              <div className="relative mt-4 space-y-3">
+                {currentSegment.tracks.map((track) => {
+                  const clipColor = TRACK_COLORS[track.type] || 'bg-slate-500/80 border-slate-400/40';
+                  return (
                     <div
-                      ref={index === 0 ? timelineRef : undefined}
+                      key={track.id}
                       onDragOver={handleTrackDragOver}
                       onDrop={(e) => handleTrackDrop(e, track.id)}
                       className="relative h-12 rounded-lg border border-slate-800 bg-slate-900/60"
@@ -1078,7 +1166,7 @@ const TimelineEditor = () => {
                         return (
                           <div
                             key={clip.id}
-                            className={`absolute top-1/2 flex h-8 -translate-y-1/2 items-center justify-between rounded-md border px-3 text-xs font-semibold text-slate-900 shadow-lg backdrop-blur transition ${clipColor}`}
+                            className={`absolute top-1 bottom-1 flex items-center justify-between rounded-md border px-3 text-xs font-semibold text-slate-900 shadow-lg backdrop-blur transition ${clipColor}`}
                             style={{ width: `${widthPercent}%`, left: `${leftPercent}%`, opacity }}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1092,7 +1180,7 @@ const TimelineEditor = () => {
                               onMouseDown={(e) => beginDrag(e, track.id, clip.id, 'resize-start')}
                             />
                             <div
-                              className="flex flex-1 items-center justify-between gap-3"
+                              className="flex flex-1 items-center justify-between gap-3 cursor-grab"
                               onMouseDown={(e) => beginDrag(e, track.id, clip.id, 'move')}
                             >
                               <span className="pointer-events-none">
@@ -1117,9 +1205,9 @@ const TimelineEditor = () => {
                         );
                       })}
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
