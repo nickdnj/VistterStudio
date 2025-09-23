@@ -2,21 +2,16 @@
   "name": "@vistterstudio/broadcast-node",
   "version": "1.0.0",
   "description": "Headless Raspberry Pi runtime for VistterStudio timeline execution",
-  "main": "src/index.js",
+  "main": "service.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "build": "docker build -t vistterstudio-broadcast-node .",
-    "deploy": "docker run -d --name broadcast-node vistterstudio-broadcast-node"
+    "start": "node service.js",
+    "dev": "nodemon service.js",
+    "build": "echo 'No build step required for broadcast-node'"
   },
   "dependencies": {
-    "@vistterstudio/shared": "file:../shared",
+    "@vistterstudio/shared": "^1.0.0",
     "express": "^4.18.0",
-    "firebase-admin": "^11.0.0",
-    "fluent-ffmpeg": "^2.1.2",
-    "node-cron": "^3.0.0",
-    "axios": "^1.6.0",
-    "sqlite3": "^5.1.0"
+    "fs-extra": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"

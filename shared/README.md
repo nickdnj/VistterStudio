@@ -1,51 +1,108 @@
 # VistterStudio Shared
 
-Common types, schemas, and utilities shared between the cloud editor and broadcast node.
+Shared types, schemas, and utilities used across the VistterStudio ecosystem.
 
-## Contents
+## Architecture
 
-- **Types**: TypeScript type definitions for timeline segments, assets, and API configurations
-- **Schemas**: JSON schemas for timeline segments and data validation
-- **Utils**: Common utility functions and constants
-- **Constants**: Shared constants and configuration values
+The shared package provides common interfaces and utilities for:
 
-## Timeline Schema
+- **Timeline Data Structures**: Core timeline and segment definitions
+- **Asset Management**: Asset and API configuration types
+- **Data Schemas**: JSON schemas for validation
+- **Utilities**: Common helper functions
 
-The timeline JSON schema defines the format for timeline segments exported from the cloud editor to broadcast nodes. It includes:
+## Development
 
-- **Metadata**: Segment information and timing
-- **Tracks**: Video, overlay, audio, and ad tracks
-- **Assets**: Static and dynamic asset references
-- **API Configs**: External API configurations for dynamic data
+### Prerequisites
 
-## Types
+- Node.js >= 18.0.0
+- TypeScript >= 5.0.0
 
-Common TypeScript interfaces used across both components:
+### Setup
 
-- `TimelineSegment`: Complete timeline segment structure
-- `Track`: Individual timeline tracks
-- `Clip`: Timeline clips with timing and positioning
-- `Asset`: Asset references and metadata
-- `ApiConfig`: External API configuration
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Watch mode for development
+npm run dev
+```
+
+## Project Structure
+
+```
+shared/
+├── types/             # TypeScript type definitions
+│   └── index.ts       # Main type exports
+├── schemas/           # JSON schemas
+│   └── timeline.json  # Timeline schema
+├── utils/             # Utility functions
+└── tsconfig.json      # TypeScript configuration
+```
+
+## Exported Types
+
+### Core Types
+
+- `TimelineSegment` - Complete timeline segment structure
+- `Track` - Timeline track definition
+- `Clip` - Individual timeline clip
+- `Asset` - Media asset definition
+- `AssetReference` - Reference to asset in timeline
+
+### Data Types
+
+- `WeatherData` - Weather API data structure
+- `TideData` - Tide information structure
+- `AdData` - Advertisement data structure
+
+### Configuration Types
+
+- `ApiConfig` - External API configuration
+- `TimeScale` - Timeline time scaling
+- `Viewport` - Timeline viewport settings
 
 ## Usage
 
-Import types and utilities in both cloud-editor and broadcast-node:
-
 ```typescript
-import { TimelineSegment, Track, Clip } from '../shared/types';
-import timelineSchema from '../shared/schemas/timeline.json';
+import { TimelineSegment, Track, Clip } from '@vistterstudio/shared';
+
+// Create a new timeline segment
+const segment: TimelineSegment = {
+  version: '1.0.0',
+  metadata: {
+    id: 'segment-1',
+    name: 'My Timeline',
+    duration: 60000,
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
+  },
+  tracks: [],
+  assets: [],
+  apiConfigs: []
+};
 ```
 
-## Validation
+### Segment Utilities
 
-Use the JSON schema to validate timeline segments:
+Sanitise and resolve segment identifiers with the shared helper so every service applies identical validation rules:
 
 ```typescript
-import Ajv from 'ajv';
-import timelineSchema from './schemas/timeline.json';
+import { normalizeSegmentId, resolveSegmentPath } from '@vistterstudio/shared/utils/segments';
 
-const ajv = new Ajv();
-const validate = ajv.compile(timelineSchema);
-const isValid = validate(timelineSegment);
+const id = normalizeSegmentId('intro.json');
+const { filePath } = resolveSegmentPath('/app/data/segments', id);
+```
+
+## Schema Validation
+
+The package includes JSON schemas for validating timeline data:
+
+```typescript
+import { validateTimelineSegment } from '@vistterstudio/shared';
+
+const isValid = validateTimelineSegment(segmentData);
 ```

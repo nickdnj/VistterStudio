@@ -1,0 +1,35 @@
+{
+  "id": "segment_001",
+  "name": "Test Segment",
+  "duration": 60,
+  "created": "2024-09-16T11:30:00.000Z",
+  "updated": "2024-09-16T11:30:00.000Z",
+  "tracks": [
+    {
+      "id": "track-1",
+      "type": "video",
+      "clips": [
+        {
+          "id": "clip-1",
+          "startTime": 0,
+          "endTime": 60,
+          "asset": {
+            "type": "static",
+            "path": "rtmp://test.example.com/live/stream"
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1920,
+            "height": 1080
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "apiConfigs": []
+}
+
+
+

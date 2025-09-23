@@ -2,11 +2,28 @@
   "name": "@vistterstudio/shared",
   "version": "1.0.0",
   "description": "Shared types, schemas, and utilities for VistterStudio",
-  "main": "types/index.ts",
-  "types": "types/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./utils/segments": {
+      "require": "./dist/utils/segments.js",
+      "import": "./dist/utils/segments.js",
+      "types": "./dist/utils/segments.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "schemas"
+  ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

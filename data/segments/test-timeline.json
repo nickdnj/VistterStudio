@@ -1,0 +1,32 @@
+{
+  "id": "test-timeline",
+  "name": "Timeline Test",
+  "duration": 60,
+  "created": "2025-09-16T17:11:44.347Z",
+  "updated": "2025-09-16T17:11:44.347Z",
+  "tracks": [
+    {
+      "id": "track-1",
+      "type": "video",
+      "clips": [
+        {
+          "id": "clip-1",
+          "startTime": 0,
+          "endTime": 60,
+          "asset": {
+            "type": "static",
+            "path": "rtmp://test.example.com/live/stream"
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1920,
+            "height": 1080
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "apiConfigs": []
+}

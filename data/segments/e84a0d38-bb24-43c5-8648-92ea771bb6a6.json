@@ -1,0 +1,32 @@
+{
+  "id": "e84a0d38-bb24-43c5-8648-92ea771bb6a6",
+  "name": "Segment e84a0d38-bb24-43c5-8648-92ea771bb6a6",
+  "duration": 60,
+  "created": "2025-09-18T13:28:36.836Z",
+  "updated": "2025-09-18T13:28:36.836Z",
+  "tracks": [
+    {
+      "id": "track-1",
+      "type": "video",
+      "clips": [
+        {
+          "id": "clip-1",
+          "startTime": 0,
+          "endTime": 60,
+          "asset": {
+            "type": "static",
+            "path": "rtmp://test.example.com/live/stream"
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1920,
+            "height": 1080
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "apiConfigs": []
+}

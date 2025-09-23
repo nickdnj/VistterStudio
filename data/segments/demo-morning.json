@@ -1,0 +1,32 @@
+{
+  "id": "demo-morning",
+  "name": "Morning Demo",
+  "duration": 120,
+  "created": "2025-09-18T12:43:07.507Z",
+  "updated": "2025-09-18T12:43:07.507Z",
+  "tracks": [
+    {
+      "id": "track-1",
+      "type": "video",
+      "clips": [
+        {
+          "id": "clip-1",
+          "startTime": 0,
+          "endTime": 120,
+          "asset": {
+            "type": "static",
+            "path": "rtmp://test.example.com/live/stream"
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1920,
+            "height": 1080
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "apiConfigs": []
+}

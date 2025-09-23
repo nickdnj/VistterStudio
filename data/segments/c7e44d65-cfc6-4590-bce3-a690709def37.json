@@ -1,0 +1,32 @@
+{
+  "id": "c7e44d65-cfc6-4590-bce3-a690709def37",
+  "name": "Test",
+  "duration": 60,
+  "created": "2025-09-16T16:05:47.198Z",
+  "updated": "2025-09-16T16:05:47.198Z",
+  "tracks": [
+    {
+      "id": "track-1",
+      "type": "video",
+      "clips": [
+        {
+          "id": "clip-1",
+          "startTime": 0,
+          "endTime": 60,
+          "asset": {
+            "type": "static",
+            "path": "rtmp://192.168.86.23:1935/bcs/channel0_main.bcs?channel=0&stream=0&user=Wharfside&password=Wharfside2025!!"
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1920,
+            "height": 1080
+          }
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "apiConfigs": []
+}

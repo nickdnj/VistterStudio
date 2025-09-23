@@ -1,35 +1,44 @@
 # VistterStudio Broadcast Node
 
-The headless Raspberry Pi runtime for executing timeline segments and broadcasting scenic locations.
+Headless Raspberry Pi runtime for executing VistterStudio timeline segments in production environments.
 
 ## Architecture
 
-This is the **Broadcast Node** component of VistterStudio's two-component architecture:
+The Broadcast Node is designed to run on Raspberry Pi devices and execute pre-defined timeline segments:
 
-- **Cloud Editor**: Web UI for timeline editing and asset management
-- **Broadcast Node (this repo)**: Headless runtime for executing timeline segments
-
-## Features
-
-- **Timeline Execution**: Interpret and execute JSON timeline segments
-- **Asset Synchronization**: Download and cache static assets from cloud
-- **Dynamic Data Processing**: Fetch real-time data for weather, tide, and ads
-- **Camera Integration**: Connect to existing security cameras and IP cameras
-- **Video Processing**: FFmpeg-based video processing with overlays
-- **Cloud Sync**: Periodic synchronization with cloud for updates
+- **Runtime**: Node.js + Express
+- **Media Processing**: FFmpeg integration
+- **Camera Management**: RTMP camera support
+- **Asset Management**: Local asset caching and synchronization
 
 ## Development
 
 ### Prerequisites
 
-- Docker
-- Raspberry Pi (for deployment)
-- FFmpeg
+- Node.js >= 18.0.0
+- FFmpeg (for video processing)
+- Docker (for containerized deployment)
 
 ### Setup
 
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Start production server
+npm start
+```
+
+### Docker Deployment
+
+```bash
+# Build Docker image
 docker build -t vistterstudio-broadcast-node .
+
+# Run container
 docker run -d --name broadcast-node vistterstudio-broadcast-node
 ```
 
@@ -38,41 +47,37 @@ docker run -d --name broadcast-node vistterstudio-broadcast-node
 ```
 broadcast-node/
 ├── src/
-│   ├── timeline/       # Timeline execution engine
-│   ├── assets/         # Asset management and caching
-│   ├── cameras/        # Camera integration
-│   ├── apis/           # External API integrations
-│   └── ffmpeg/         # Video processing
-├── config/             # Configuration files
-└── Dockerfile          # Container definition
+│   ├── apis/          # External API integrations
+│   ├── assets/        # Asset management
+│   ├── cameras/       # Camera management
+│   ├── ffmpeg/        # Video processing
+│   └── timeline/      # Timeline execution engine
+├── data/
+│   └── segments/      # Timeline segment storage
+├── service.js         # Main service entry point
+└── Dockerfile         # Container configuration
 ```
 
-## Timeline Execution
+## Features
 
-The broadcast node receives JSON timeline segments from the cloud editor and executes them by:
-
-1. **Asset Sync**: Downloading static assets and caching them locally
-2. **Dynamic Data**: Fetching real-time data from configured APIs
-3. **Video Processing**: Using FFmpeg to composite camera feeds with overlays
-4. **Output Streaming**: Streaming processed video to configured outputs
-
-## Asset Management
-
-- **Static Assets**: PNG/JPEG images downloaded from Firebase Storage
-- **Dynamic Overlays**: Weather, tide, and ad overlays rendered with live data
-- **Local Caching**: Assets cached locally for offline operation
-
-## API Integrations
-
-- **Weather APIs**: Real-time weather data for dynamic overlays
-- **Tide APIs**: NOAA tide data for coastal locations
-- **Ad APIs**: Dynamic ad content and rotation
+- **Timeline Execution**: Interpret and execute JSON timeline segments
+- **Asset Synchronization**: Download and cache assets from cloud
+- **Camera Integration**: Connect to RTMP cameras and IP cameras
+- **Video Processing**: FFmpeg-based video processing with overlays
+- **Dynamic Data**: Fetch real-time data for weather, tide, and ads
 
 ## Configuration
 
-The broadcast node is configured through environment variables and JSON configuration files:
+Environment variables:
 
-- `FIREBASE_CONFIG`: Firebase service account credentials
-- `CAMERA_CONFIG`: Camera connection settings
-- `API_CONFIGS`: External API configurations
-- `OUTPUT_CONFIG`: Streaming output settings
+- `PORT` - Server port (default: 3000)
+- `SEGMENTS_PATH` - Path to segments directory
+- `ASSETS_PATH` - Path to assets directory
+- `FFMPEG_PATH` - Path to FFmpeg binary
+
+## API Endpoints
+
+- `GET /api/health` - Health check
+- `GET /api/segments` - List available segments
+- `POST /api/execute/:id` - Execute timeline segment
+- `GET /api/status` - Current execution status

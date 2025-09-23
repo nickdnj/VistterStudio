@@ -4,15 +4,18 @@
   "description": "Transform your scenic location into a compelling digital destination through automated place-based visual storytelling",
   "private": true,
   "workspaces": [
-    "cloud-editor",
+    "cloud-editor/frontend",
+    "cloud-editor/backend",
     "broadcast-node",
     "shared"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=cloud-editor",
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
-    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "dev": "npm run dev --workspace=cloud-editor/frontend",
+    "dev:frontend": "npm run dev --workspace=cloud-editor/frontend",
+    "dev:backend": "npm run dev --workspace=cloud-editor/backend",
+    "build": "npm run --workspaces --if-present build",
+    "test": "npm run --workspaces --if-present test",
+    "clean": "npm run --workspaces --if-present clean && rm -rf node_modules",
     "install-all": "npm install --workspaces"
   },
   "devDependencies": {
