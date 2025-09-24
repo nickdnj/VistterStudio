@@ -50,14 +50,14 @@ VistterStudio/
 
 ### Cloud Editor
 - **Timeline Editor**: Drag-and-drop interface for creating visual storytelling timelines
-- **Asset Management**: Upload and manage PNG/JPEG images, promotional graphics, and overlay assets
+- **Media Management**: Upload and manage PNG/JPEG images, promotional graphics, and overlay media
 - **Dynamic Data Integration**: Weather, tide, and advertising API integration
 - **Ad Management**: Insert ads directly into livestreams with scheduling and rotation
 - **JSON Export**: Export timelines as JSON segments for broadcast node execution
 
 ### Broadcast Node
 - **Timeline Execution**: Interpret and execute JSON timeline segments
-- **Asset Synchronization**: Download and cache static assets from cloud
+- **Media Synchronization**: Download and cache static media from cloud
 - **Dynamic Data Processing**: Fetch real-time data for weather, tide, and ads
 - **Camera Integration**: Connect to existing security cameras and IP cameras
 - **Video Processing**: FFmpeg-based video processing with overlays

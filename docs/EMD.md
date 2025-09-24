@@ -29,21 +29,21 @@ VistterStudio's unique value is transforming passive security cameras into activ
 *   **Dynamic Gadget Creation:** Design weather boxes, tide tables, and time displays that update automatically with live data
 *   **Advertising Integration:** Insert ads directly into your scenic livestream with static ad creatives and dynamic ad API integration
 *   **Ad Scheduling & Rotation:** Set up scheduled ad spots, rotation schedules, and time-bound ad slots for monetization
-*   **Static Asset Management:** Upload and manage PNG/JPEG promotional graphics, logos, overlay assets, and ad creatives
+*   **Static Media Management:** Upload and manage PNG/JPEG promotional graphics, logos, overlay media, and ad creatives
 *   **API Integration:** Connect to weather, tide, and ad service APIs to power dynamic overlays and ads with live information
 *   **Static Thumbnail Preview:** Edit your visual storytelling timeline using static thumbnails—no live streaming required during editing
-*   **JSON Segment Export:** Export your visual storytelling timeline as JSON segments with asset references and ad scheduling for automated broadcast execution
+*   **JSON Segment Export:** Export your visual storytelling timeline as JSON segments with media references and ad scheduling for automated broadcast execution
 *   **Multi-User Collaboration:** Team members can collaborate on your location's visual storytelling timeline in real-time
 
 ### Broadcast Node Features
 *   **Automated Scenic Broadcasting:** Execute your visual storytelling segments automatically, showcasing your location 24/7
 *   **Real-Time Data Processing:** Fetch live weather, tide, and ad data to render dynamic overlays and ads with current information
-*   **Asset Synchronization:** Automatically download and cache static assets (PNG/JPEG), dynamic overlays, and ad creatives from the cloud
+*   **Media Synchronization:** Automatically download and cache static media (PNG/JPEG), dynamic overlays, and ad creatives from the cloud
 *   **Ad Management:** Process ad rotation schedules, fetch dynamic ad content from ad APIs, and handle time-bound ad slots
 *   **Existing Camera Integration:** Connect your current security cameras, webcams, and IP cameras—no new equipment needed
 *   **Dynamic Overlay Rendering:** Generate weather boxes, tide tables, time displays, and ad overlays with live data as overlay images
-*   **Cloud Synchronization:** Automatically receive updates to your visual storytelling content, asset configurations, and ad schedules from the cloud
-*   **Offline Resilience:** Continue broadcasting your scenic view with cached assets and ads even when cloud connectivity is limited
+*   **Cloud Synchronization:** Automatically receive updates to your visual storytelling content, media configurations, and ad schedules from the cloud
+*   **Offline Resilience:** Continue broadcasting your scenic view with cached media and ads even when cloud connectivity is limited
 *   **Raspberry Pi Optimized:** Lightweight, efficient operation perfect for scenic business locations
 *   **Docker Deployment:** Easy setup and management with simple Docker deployment
 

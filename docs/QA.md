@@ -7,7 +7,7 @@ This document outlines the Quality Assurance (QA) plan for the VistterStudio two
 ### Cloud Editor Objectives
 *   **Verify User Authentication:** Ensure Firebase Auth integration works correctly for scenic business owners with multiple authentication methods
 *   **Validate Visual Storytelling Timeline Editing:** Confirm that place-based visual storytelling timeline creation, editing, and collaboration features function properly
-*   **Test Promotional Asset Management:** Verify that local event flyers, menu updates, weather widgets, and promotional graphics upload, storage, and retrieval work correctly with Firebase Storage
+*   **Test Promotional Media Management:** Verify that local event flyers, menu updates, weather widgets, and promotional graphics upload, storage, and retrieval work correctly with Firebase Storage
 *   **Ensure JSON Export:** Validate that visual storytelling timeline data exports correctly as JSON segments for scenic location broadcast nodes
 *   **Confirm Real-Time Sync:** Verify that collaborative visual storytelling editing and real-time synchronization work across multiple business team members
 
@@ -50,7 +50,7 @@ The test plan is a series of automated checks that can be run to validate both c
 | --------------------------- | ------------ | ----------------------------------------------------- |
 | User Authentication         | `TC-CE-001`  | Test Firebase Auth login/logout with multiple providers |
 | Timeline Creation           | `TC-CE-002`  | Create timeline, add tracks, and verify data persistence |
-| Asset Upload                | `TC-CE-003`  | Upload assets to Firebase Storage and verify accessibility |
+| Media Upload                | `TC-CE-003`  | Upload media to Firebase Storage and verify accessibility |
 | JSON Export                 | `TC-CE-004`  | Export timeline as JSON segment and validate format |
 | Real-Time Collaboration    | `TC-CE-005`  | Test multi-user editing with conflict resolution |
 | Camera Configuration        | `TC-CE-006`  | Configure RTMP cameras and verify static thumbnail generation |
@@ -65,10 +65,10 @@ The test plan is a series of automated checks that can be run to validate both c
 | Segment Execution           | `TC-BN-004`  | Execute JSON segments and verify video processing |
 | Cloud Synchronization       | `TC-BN-005`  | Test periodic sync with cloud and status reporting |
 | Offline Operation           | `TC-BN-006`  | Verify operation with cached segments when offline |
-| Asset Sync                  | `TC-BN-007`  | Test static asset download and caching on broadcast node |
+| Media Sync                  | `TC-BN-007`  | Test static media download and caching on broadcast node |
 | Dynamic Overlay Rendering   | `TC-BN-008`  | Test weather/tide gadget rendering with live API data |
-| Mixed Asset Timeline        | `TC-BN-009`  | Test timeline execution with both static and dynamic overlays |
-| Ad Asset Sync               | `TC-BN-010`  | Test static ad creative download and dynamic ad API fetching |
+| Mixed Media Timeline        | `TC-BN-009`  | Test timeline execution with both static and dynamic overlays |
+| Ad Media Sync               | `TC-BN-010`  | Test static ad creative download and dynamic ad API fetching |
 | Ad Rotation & Scheduling    | `TC-BN-011`  | Test ad rotation schedules and time-bound ad slots |
 | Ad Timeline Integration     | `TC-BN-012`  | Test timeline execution with ad overlays and monetization |
 
@@ -110,17 +110,17 @@ These test cases can be run manually or automated using testing frameworks and s
     ```
 3.  **Expected Result:** Timeline created successfully and retrievable from database.
 
-### TC-CE-003: Verify Asset Upload
+### TC-CE-003: Verify Media Upload
 
-1.  **Objective:** Verify that asset upload to Firebase Storage works correctly.
+1.  **Objective:** Verify that media upload to Firebase Storage works correctly.
 2.  **Steps:**
     ```bash
-    # Upload test asset
-    curl -X POST http://localhost:3000/api/assets/upload \
+    # Upload test media
+    curl -X POST http://localhost:3000/api/media/upload \
       -H "Authorization: Bearer <token>" \
       -F "file=@test-image.jpg"
     ```
-3.  **Expected Result:** Asset uploaded successfully with valid download URL.
+3.  **Expected Result:** Media uploaded successfully with valid download URL.
 
 ### TC-CE-004: Verify JSON Export
 
@@ -131,7 +131,7 @@ These test cases can be run manually or automated using testing frameworks and s
     curl -X POST http://localhost:3000/api/projects/{id}/export \
       -H "Authorization: Bearer <token>"
     ```
-3.  **Expected Result:** Valid JSON segment with proper structure and asset references.
+3.  **Expected Result:** Valid JSON segment with proper structure and media references.
 
 ### Broadcast Node Test Cases
 
@@ -213,26 +213,26 @@ These test cases can be run manually or automated using testing frameworks and s
     ```
 3.  **Expected Result:** Cached segments execute successfully without cloud connectivity.
 
-### TC-BN-007: Verify Asset Sync
+### TC-BN-007: Verify Media Sync
 
-1.  **Objective:** Verify that broadcast nodes can download and cache static assets from the cloud.
+1.  **Objective:** Verify that broadcast nodes can download and cache static media from the cloud.
 2.  **Steps:**
     ```bash
-    # Upload test assets to cloud
-    curl -X POST http://localhost:3000/api/assets/upload \
+    # Upload test media to cloud
+    curl -X POST http://localhost:3000/api/media/upload \
       -H "Content-Type: multipart/form-data" \
       -F "file=@test-logo.png" \
       -F "type=overlay"
     
-    # Test asset sync on broadcast node
-    curl -X POST http://localhost:8080/api/sync/assets \
+    # Test media sync on broadcast node
+    curl -X POST http://localhost:8080/api/sync/media \
       -H "Content-Type: application/json" \
       -d '{"segmentId":"test-segment-001"}'
     
-    # Verify assets are cached locally
-    ls -la /app/cache/assets/
+    # Verify media are cached locally
+    ls -la /app/cache/media/
     ```
-3.  **Expected Result:** Static PNG/JPEG assets are downloaded and cached locally on broadcast node.
+3.  **Expected Result:** Static PNG/JPEG media are downloaded and cached locally on broadcast node.
 
 ### TC-BN-008: Verify Dynamic Overlay Rendering
 
@@ -254,33 +254,33 @@ These test cases can be run manually or automated using testing frameworks and s
     ```
 3.  **Expected Result:** Dynamic overlays are rendered as PNG images with live weather data.
 
-### TC-BN-009: Verify Mixed Asset Timeline
+### TC-BN-009: Verify Mixed Media Timeline
 
 1.  **Objective:** Verify that timelines with both static and dynamic overlays execute correctly.
 2.  **Steps:**
     ```bash
-    # Create timeline with mixed assets
+    # Create timeline with mixed media
     curl -X POST http://localhost:3000/api/timeline/create \
       -H "Content-Type: application/json" \
-      -d '{"assets":[{"type":"static","file":"logo.png"},{"type":"dynamic","gadget":"weather-box"}]}'
+      -d '{"media":[{"type":"static","file":"logo.png"},{"type":"dynamic","gadget":"weather-box"}]}'
     
-    # Execute mixed asset timeline
+    # Execute mixed media timeline
     curl -X POST http://localhost:8080/api/execute/start \
       -H "Content-Type: application/json" \
-      -d '{"segmentId":"mixed-asset-timeline-001"}'
+      -d '{"segmentId":"mixed-media-timeline-001"}'
     
     # Verify video output contains both static and dynamic overlays
     ffprobe -v quiet -show_streams output.mp4
     ```
 3.  **Expected Result:** Timeline executes successfully with both static logo and dynamic weather overlay visible in output.
 
-### TC-BN-010: Verify Ad Asset Sync
+### TC-BN-010: Verify Ad Media Sync
 
 1.  **Objective:** Verify that broadcast nodes can download static ad creatives and fetch dynamic ad content from ad APIs.
 2.  **Steps:**
     ```bash
     # Upload static ad creative to cloud
-    curl -X POST http://localhost:3000/api/assets/upload \
+    curl -X POST http://localhost:3000/api/media/upload \
       -H "Content-Type: multipart/form-data" \
       -F "file=@restaurant-ad.png" \
       -F "type=ad" \
@@ -291,12 +291,12 @@ These test cases can be run manually or automated using testing frameworks and s
       -H "Content-Type: application/json" \
       -d '{"apiKey":"test-ad-key","endpoint":"https://api.ads.com/v1/creative","rotationInterval":300}'
     
-    # Test ad asset sync on broadcast node
+    # Test ad media sync on broadcast node
     curl -X POST http://localhost:8080/api/sync/ads \
       -H "Content-Type: application/json" \
       -d '{"segmentId":"ad-timeline-001"}'
     
-    # Verify ad assets are cached locally
+    # Verify ad media are cached locally
     ls -la /app/cache/ads/
     ```
 3.  **Expected Result:** Static ad creatives are downloaded and dynamic ad content is fetched from ad APIs and cached locally.
@@ -329,7 +329,7 @@ These test cases can be run manually or automated using testing frameworks and s
     # Create timeline with ad overlays
     curl -X POST http://localhost:3000/api/timeline/create \
       -H "Content-Type: application/json" \
-      -d '{"assets":[{"type":"static","file":"logo.png"},{"type":"ad","creative":"restaurant-ad.png","schedule":"18:00-21:00"}]}'
+      -d '{"media":[{"type":"static","file":"logo.png"},{"type":"ad","creative":"restaurant-ad.png","schedule":"18:00-21:00"}]}'
     
     # Execute ad timeline
     curl -X POST http://localhost:8080/api/execute/start \
@@ -360,7 +360,7 @@ A new release of VistterStudio will be considered "accepted" and ready for a sta
 *   Firebase integration works correctly with proper authentication
 *   Timeline editing and collaboration features function properly
 *   JSON export produces valid segments for broadcast nodes
-*   Asset upload and management work correctly
+*   Media upload and management work correctly
 
 ### Broadcast Node Acceptance Criteria
 *   All broadcast node test cases pass (TC-BN-001 through TC-BN-006)

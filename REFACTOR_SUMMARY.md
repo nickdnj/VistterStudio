@@ -9,7 +9,7 @@ Successfully refactored the entire repository to match the new cloud-editor-firs
 - **Wyze Bridge System** (`wyze-bridge-v4fix/`) - Entire directory and all Wyze-specific code
 - **Legacy Broadcast Server** (`broadcast-server/`) - Old RTMP muxing and device-local orchestration
 - **Broadcast Manager** (`broadcast-manager/`) - Legacy management components
-- **Legacy Server** (`server/`) - Old asset server and image assets
+- **Legacy Server** (`server/`) - Old media server and image media
 - **Legacy Frontend** (`frontend/`) - Old monolithic frontend structure
 - **Legacy Documentation** - Removed outdated docs and guides
 - **Legacy Configuration** - Removed old docker-compose.yml and test files
@@ -31,16 +31,16 @@ Successfully refactored the entire repository to match the new cloud-editor-firs
 
 ```
 VistterStudio/
-├── cloud-editor/        # Web UI for timeline editing and asset management
+├── cloud-editor/        # Web UI for timeline editing and media management
 │   ├── timeline/        # Timeline editor components and state management
-│   ├── components/      # React components (AssetManager, EffectsGallery, etc.)
+│   ├── components/      # React components (MediaManager, EffectsGallery, etc.)
 │   ├── effects/         # Visual effects and overlays
 │   ├── utils/           # Utility functions
 │   └── README.md        # Cloud editor documentation
 ├── broadcast-node/      # Headless Raspberry Pi runtime
 │   ├── src/
 │   │   ├── timeline/    # Timeline execution engine
-│   │   ├── assets/      # Asset management and caching
+│   │   ├── media/      # Media management and caching
 │   │   ├── cameras/     # Camera integration
 │   │   ├── apis/        # External API integrations
 │   │   └── ffmpeg/      # Video processing
@@ -64,12 +64,12 @@ VistterStudio/
 - **State Management** - Zustand store and timeline state
 - **Time Scale Logic** - Time-domain model and utilities
 - **Drag & Drop** - Timeline interaction components
-- **Asset Management** - Asset upload and management components
+- **Media Management** - Media upload and management components
 
 ### Effects and Overlays:
 - **Effects Gallery** (`EffectsGallery.tsx`) - Visual effects system
 - **Intro Effects** - Video intro effects and thumbnails
-- **Thumbnail Cache** - Asset thumbnail management
+- **Thumbnail Cache** - Media thumbnail management
 
 ## 🧳 Git Preservation
 
@@ -81,13 +81,13 @@ VistterStudio/
 
 ### Cloud Editor Stubs:
 - Timeline editor components preserved and organized
-- Asset management system ready for enhancement
+- Media management system ready for enhancement
 - Effects gallery and overlay system intact
 - Configuration files (Vite, Tailwind, ESLint) preserved
 
 ### Broadcast Node Stubs:
 - **Timeline Engine** - JSON segment execution framework
-- **Asset Manager** - Asset sync and caching system
+- **Media Manager** - Media sync and caching system
 - **Camera Manager** - Camera integration framework
 - **API Manager** - External API integration system
 - **Docker Setup** - Container configuration ready
@@ -110,11 +110,11 @@ The repository is now in a clean, minimal state with:
 
 ## 🚀 Next Steps
 
-1. **Cloud Editor Development**: Enhance timeline editor with new asset management
+1. **Cloud Editor Development**: Enhance timeline editor with new media management
 2. **Broadcast Node Implementation**: Build headless runtime for timeline execution
 3. **Firebase Integration**: Add authentication and cloud storage
 4. **API Integrations**: Implement weather, tide, and ad APIs
-5. **Asset Pipeline**: Build static and dynamic asset management
+5. **Media Pipeline**: Build static and dynamic media management
 6. **Testing**: Implement comprehensive test suites
 
 The repository is now ready for a clean, focused rebuild following the new architecture specifications.

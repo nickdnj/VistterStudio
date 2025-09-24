@@ -9,7 +9,7 @@ The Broadcast Node is designed to run on Raspberry Pi devices and execute pre-de
 - **Runtime**: Node.js + Express
 - **Media Processing**: FFmpeg integration
 - **Camera Management**: RTMP camera support
-- **Asset Management**: Local asset caching and synchronization
+- **Media Management**: Local media caching and synchronization
 
 ## Development
 
@@ -48,7 +48,7 @@ docker run -d --name broadcast-node vistterstudio-broadcast-node
 broadcast-node/
 ├── src/
 │   ├── apis/          # External API integrations
-│   ├── assets/        # Asset management
+│   ├── media/        # Media management
 │   ├── cameras/       # Camera management
 │   ├── ffmpeg/        # Video processing
 │   └── timeline/      # Timeline execution engine
@@ -61,7 +61,7 @@ broadcast-node/
 ## Features
 
 - **Timeline Execution**: Interpret and execute JSON timeline segments
-- **Asset Synchronization**: Download and cache assets from cloud
+- **Media Synchronization**: Download and cache media from cloud
 - **Camera Integration**: Connect to RTMP cameras and IP cameras
 - **Video Processing**: FFmpeg-based video processing with overlays
 - **Dynamic Data**: Fetch real-time data for weather, tide, and ads
@@ -72,7 +72,7 @@ Environment variables:
 
 - `PORT` - Server port (default: 3000)
 - `SEGMENTS_PATH` - Path to segments directory
-- `ASSETS_PATH` - Path to assets directory
+- `MEDIA_PATH` - Path to media directory
 - `FFMPEG_PATH` - Path to FFmpeg binary
 
 ## API Endpoints

@@ -6,7 +6,7 @@ This document outlines the software architecture for VistterStudio, a two-compon
 
 VistterStudio is architected as a distributed system with two core components:
 
-1. **Cloud Editor (Web UI):** A modern web application for place-based visual storytelling timeline editing, promotional overlay management, and scenic location asset configuration
+1. **Cloud Editor (Web UI):** A modern web application for place-based visual storytelling timeline editing, promotional overlay management, and scenic location media configuration
 2. **Broadcast Node (Raspberry Pi):** A headless runtime deployed at scenic business locations that executes pre-defined visual storytelling segments based on JSON schedules
 
 The system operates on a **cloud-first, pull-based model** where scenic business owners create automated livestreams in the cloud, and broadcast nodes at their locations fetch and execute visual storytelling segments to showcase their scenic view.
@@ -16,10 +16,10 @@ graph TD
     subgraph Cloud Infrastructure
         A[Cloud Editor - React/Express]
         B[Firebase Auth & Database]
-        C[Asset Storage]
+        C[Media Storage]
         D[Segment JSON Storage]
         A -- Manages --> B
-        A -- Stores Assets --> C
+        A -- Stores Media --> C
         A -- Exports Segments --> D
     end
     
@@ -50,7 +50,7 @@ graph TD
 
 The architecture follows a **distributed microservices pattern** with clear separation between cloud-based editing and edge-based execution:
 
-*   **Cloud Editor (Web Application):** A React-based SPA with Express.js backend, providing timeline editing, asset management, and segment export capabilities
+*   **Cloud Editor (Web Application):** A React-based SPA with Express.js backend, providing timeline editing, media management, and segment export capabilities
 *   **Broadcast Node (Edge Runtime):** A Dockerized headless application that executes pre-defined video segments on Raspberry Pi hardware
 *   **Firebase Backend:** Handles authentication, data persistence, and real-time synchronization between components
 
@@ -58,7 +58,7 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 
 ## 3. State Management
 
-*   **Cloud Editor State:** Timeline data, asset metadata, and user preferences are managed by Firebase Firestore with real-time synchronization. Local UI state uses React Context and Zustand for immediate responsiveness.
+*   **Cloud Editor State:** Timeline data, media metadata, and user preferences are managed by Firebase Firestore with real-time synchronization. Local UI state uses React Context and Zustand for immediate responsiveness.
 *   **Broadcast Node State:** Segment schedules, camera configurations, and execution status are stored locally in SQLite. Authentication tokens and sync timestamps are managed by the Firebase SDK.
 *   **Camera State:** RTMP camera status and camera ingest container connectivity are monitored locally on each broadcast node. Camera credentials are stored securely in environment variables.
 *   **Multi-User State:** User authentication, project sharing, and collaborative editing are handled by Firebase Auth and Firestore security rules.
@@ -68,17 +68,17 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 ### Cloud Editor Workflow
 1.  **User Authentication:** Scenic business owners log into the cloud editor via Firebase Auth with multi-user support
 2.  **Visual Storytelling Timeline:** Business owners create automated livestreams showcasing their scenic location using static thumbnails and drag-and-drop interface
-3.  **Static Asset Management:** PNG/JPEG images, promotional graphics, logos, and overlay assets are uploaded to Firebase Storage and referenced in visual storytelling timelines
+3.  **Static Media Management:** PNG/JPEG images, promotional graphics, logos, and overlay media are uploaded to Firebase Storage and referenced in visual storytelling timelines
 4.  **Dynamic Gadget Creation:** Users design weather boxes, tide tables, and other data-driven overlays with placeholders (e.g., `{temp}`, `{wind}`, `{tide}`) for real-time data
 5.  **Advertising Integration:** Users configure ad API endpoints and create ad placeholders with scheduling and rotation logic for monetizable overlays
 6.  **API Integration:** Cloud editor integrates with external APIs (weather, NOAA tide data, ad services) to configure dynamic data sources for gadgets and ads
-7.  **Asset Export Pipeline:** Static assets are exported as PNG/JPEG files and packaged with timeline JSON containing asset references, API instructions, and ad scheduling metadata
-8.  **Cloud Storage:** JSON segments with asset metadata and ad configuration are stored in Firebase Firestore with scheduling information for scenic business locations
+7.  **Media Export Pipeline:** Static media are exported as PNG/JPEG files and packaged with timeline JSON containing media references, API instructions, and ad scheduling metadata
+8.  **Cloud Storage:** JSON segments with media metadata and ad configuration are stored in Firebase Firestore with scheduling information for scenic business locations
 
 ### Broadcast Node Workflow
 1.  **Authentication:** Broadcast node at scenic business location authenticates with Firebase using stored credentials
-2.  **Segment Discovery:** Node queries Firebase for available visual storytelling segments and downloads JSON definitions with asset references and ad configuration
-3.  **Asset Synchronization:** Node downloads static PNG/JPEG assets from Firebase Storage and caches them locally for timeline execution
+2.  **Segment Discovery:** Node queries Firebase for available visual storytelling segments and downloads JSON definitions with media references and ad configuration
+3.  **Media Synchronization:** Node downloads static PNG/JPEG media from Firebase Storage and caches them locally for timeline execution
 4.  **Dynamic Data Resolution:** Node fetches real-time data from configured APIs (weather, tide, ads) and renders dynamic gadgets and ads with live data
 5.  **Ad Management:** Node processes ad rotation schedules, fetches dynamic ad content from ad APIs, and handles time-bound ad slots
 6.  **Schedule Execution:** Node interprets JSON segments and executes automated livestreams showcasing the scenic location based on timing
@@ -92,7 +92,7 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   **Frontend:** React 18+ with TypeScript, Zustand for state management, Tailwind CSS for styling
 *   **Backend:** Node.js with Express.js, Firebase Admin SDK
 *   **Database:** Firebase Firestore for real-time data synchronization
-*   **Storage:** Firebase Storage for assets and media files
+*   **Storage:** Firebase Storage for media and media files
 *   **Authentication:** Firebase Auth with multi-user support
 *   **Deployment:** Google Cloud Run with Docker containers
 
@@ -109,13 +109,13 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   **Camera Bridge:** Generic camera ingest container (Python-based) for camera integration
 *   **Video Formats:** RTMP, HLS, WebRTC for camera inputs; RTMP, HLS for outputs
 
-## 6. Asset Management System
+## 6. Media Management System
 
-### Static Asset Pipeline
-*   **Asset Upload:** Users upload PNG/JPEG images, promotional graphics, logos, and overlay assets to Firebase Storage
-*   **Asset Processing:** Images are processed and optimized for broadcast use with consistent format (PNG standard)
-*   **Asset Metadata:** Asset information (dimensions, file size, upload date) is stored in Firestore with unique identifiers
-*   **Asset Export:** Static assets are packaged with timeline JSON and downloaded by broadcast nodes during sync
+### Static Media Pipeline
+*   **Media Upload:** Users upload PNG/JPEG images, promotional graphics, logos, and overlay media to Firebase Storage
+*   **Media Processing:** Images are processed and optimized for broadcast use with consistent format (PNG standard)
+*   **Media Metadata:** Media information (dimensions, file size, upload date) is stored in Firestore with unique identifiers
+*   **Media Export:** Static media are packaged with timeline JSON and downloaded by broadcast nodes during sync
 
 ### Dynamic Data Integration
 *   **API Configuration:** Cloud editor allows users to configure external API endpoints for weather, tide data, and ad services
@@ -125,11 +125,11 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   **Ad Scheduling:** Time-based ad slot configuration with rotation schedules and time-bound ad display (e.g., 6-9 PM only)
 *   **Real-Time Rendering:** Broadcast nodes fetch live data and render dynamic overlays and ads as PNG images for FFmpeg processing
 
-### Asset Synchronization
-*   **Cloud-to-Node Sync:** Broadcast nodes periodically download updated assets and timeline configurations
-*   **Local Caching:** Static and dynamic assets are cached locally on broadcast nodes for offline operation
-*   **Version Control:** Asset versions are tracked to ensure broadcast nodes use the latest content
-*   **Sync Status Reporting:** Broadcast nodes report asset sync status and any missing assets to the cloud
+### Media Synchronization
+*   **Cloud-to-Node Sync:** Broadcast nodes periodically download updated media and timeline configurations
+*   **Local Caching:** Static and dynamic media are cached locally on broadcast nodes for offline operation
+*   **Version Control:** Media versions are tracked to ensure broadcast nodes use the latest content
+*   **Sync Status Reporting:** Broadcast nodes report media sync status and any missing media to the cloud
 
 ### Advertising Management System
 *   **Ad API Integration:** Cloud editor connects to external ad service APIs for dynamic ad content delivery
@@ -137,7 +137,7 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   **Ad Rotation Logic:** Configure ad rotation schedules (e.g., every 5 minutes) and time-bound ad slots
 *   **Ad Placeholder System:** Dynamic ads use placeholders (e.g., `{ad_creative}`, `{ad_copy}`, `{ad_link}`) for real-time content
 *   **Ad Scheduling:** Time-based ad configuration with start/end times, recurrence patterns, and audience targeting
-*   **Ad Asset Sync:** Broadcast nodes download static ad creatives and fetch dynamic ad content from ad APIs
+*   **Ad Media Sync:** Broadcast nodes download static ad creatives and fetch dynamic ad content from ad APIs
 *   **Ad Performance Tracking:** Monitor ad display metrics, rotation frequency, and engagement data
 
 ## 7. Authentication
@@ -163,10 +163,10 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   `PUT /api/projects/{id}/timeline`: Update timeline with real-time sync
 *   `POST /api/projects/{id}/export`: Export timeline as JSON segment
 
-**Asset Management:**
-*   `POST /api/assets/upload`: Upload images, videos, audio files
-*   `GET /api/assets/{id}`: Get asset metadata and download URL
-*   `DELETE /api/assets/{id}`: Delete asset and update references
+**Media Management:**
+*   `POST /api/media/upload`: Upload images, videos, audio files
+*   `GET /api/media/{id}`: Get media metadata and download URL
+*   `DELETE /api/media/{id}`: Delete media and update references
 
 **Segment Management:**
 *   `GET /api/segments`: List available segments for broadcast nodes
@@ -199,7 +199,7 @@ The system uses **Docker Compose** for local development and **Google Cloud Run*
 *   `users`: User profiles, preferences, and authentication data
 *   `projects`: Project metadata, sharing permissions, and collaboration settings
 *   `timelines`: Timeline data with real-time synchronization for collaborative editing
-*   `assets`: Media file metadata, thumbnails, and storage references
+*   `media`: Media file metadata, thumbnails, and storage references
 *   `segments`: Exported JSON segments with scheduling and distribution metadata
 *   `broadcast_nodes`: Registered broadcast node information and status
 
@@ -358,7 +358,7 @@ interface Clip {
   id: string;
   trackId: string;
   kind: 'video' | 'overlay' | 'audio';
-  sourceId: string;     // Camera ID or asset ID
+  sourceId: string;     // Camera ID or media ID
   startMs: number;
   durationMs: number;
   opacity?: number;
@@ -368,7 +368,7 @@ interface Clip {
   // Legacy compatibility
   cameraId?: string;
   camera?: any;
-  asset?: any;
+  media?: any;
 }
 ```
 
@@ -376,7 +376,7 @@ interface Clip {
 
 #### Drag and Drop
 **From Sidebar to Timeline:**
-1. Sidebar items (cameras/assets) have `draggable` attribute
+1. Sidebar items (cameras/media) have `draggable` attribute
 2. `onDragStart` sets `dataTransfer` with JSON payload
 3. Track drop zones handle `onDrop` events
 4. Drop position converted to time using `timeScale.tOf()`
@@ -440,7 +440,7 @@ const tick = () => {
 The cloud editor uses **static thumbnails** for timeline preview, eliminating the need for live streaming during editing:
 
 ```typescript
-const { previewContent, overlays } = useTimelinePreview(assets, getThumbnailUrl);
+const { previewContent, overlays } = useTimelinePreview(media, getThumbnailUrl);
 ```
 
 **Preview Logic:**
@@ -450,13 +450,13 @@ const { previewContent, overlays } = useTimelinePreview(assets, getThumbnailUrl)
 4. Return structured data for static thumbnail rendering
 
 **Content Priority:**
-1. Video tracks (cameras and video assets)
+1. Video tracks (cameras and video media)
 2. Overlay tracks (images and graphics)
 3. Audio tracks (background audio)
 
 **Thumbnail Integration:**
 - Static thumbnails for all camera sources (RTMP and IP cameras)
-- Automatic thumbnail generation for uploaded assets
+- Automatic thumbnail generation for uploaded media
 - Cached thumbnails for performance optimization
 - Fallback thumbnails for offline or unavailable sources
 
@@ -474,7 +474,7 @@ interface TimelineSegment {
 
 interface TrackSegment {
   type: 'video' | 'overlay' | 'audio';
-  source: string; // Camera ID or asset ID
+  source: string; // Camera ID or media ID
   startTime: number;
   duration: number;
   properties: ClipProperties;
@@ -484,7 +484,7 @@ interface TrackSegment {
 **Export Process:**
 1. Validate timeline for export compatibility
 2. Convert timeline data to JSON segment format
-3. Include asset references and camera configurations
+3. Include media references and camera configurations
 4. Upload segment to Firebase for distribution
 5. Notify broadcast nodes of new segment availability
 

@@ -26,18 +26,18 @@ VistterStudio transforms beautiful, static camera views into engaging, monetizab
 *   **User Management:** Admin controls for team management and project permissions
 
 **Timeline-Based Editing:**
-*   **Drag-and-Drop Interface:** Users can drag cameras and assets from the sidebar directly onto timeline tracks
+*   **Drag-and-Drop Interface:** Users can drag cameras and media from the sidebar directly onto timeline tracks
 *   **Multi-Track Timeline:** Support for multiple video, audio, and overlay tracks with proper layering
 *   **Static Thumbnail Preview:** Timeline preview using static thumbnails (no live streaming required for editing)
 *   **Timeline Playback Controls:** Play, pause, stop, and seek functionality with looping support
 *   **Timeline Export:** Export completed timelines as JSON segments for broadcast node execution
 
-**Asset Management:**
-*   **Static Asset Library:** Support for PNG/JPEG images, promotional graphics, logos, and overlay assets with Firebase Storage integration
-*   **Asset Upload System:** Built-in asset upload with progress tracking and validation for static images
-*   **Asset Timeline Integration:** Drag-and-drop static assets onto timeline tracks with automatic duration handling
-*   **Thumbnail Generation:** Automatic thumbnail generation for video assets, camera feeds, and static overlays
-*   **Asset Export Pipeline:** Static assets are exported as PNG/JPEG files and packaged with timeline JSON for broadcast nodes
+**Media Management:**
+*   **Static Media Library:** Support for PNG/JPEG images, promotional graphics, logos, and overlay media with Firebase Storage integration
+*   **Media Upload System:** Built-in media upload with progress tracking and validation for static images
+*   **Media Timeline Integration:** Drag-and-drop static media onto timeline tracks with automatic duration handling
+*   **Thumbnail Generation:** Automatic thumbnail generation for video media, camera feeds, and static overlays
+*   **Media Export Pipeline:** Static media are exported as PNG/JPEG files and packaged with timeline JSON for broadcast nodes
 
 **Dynamic Data Integration:**
 *   **Weather API Integration:** Real-time weather data from external APIs (temperature, wind, forecast, conditions)
@@ -57,24 +57,24 @@ VistterStudio transforms beautiful, static camera views into engaging, monetizab
 ### Broadcast Node Requirements
 
 **Segment Execution:**
-*   **JSON Segment Processing:** Interpret and execute video segments defined in JSON format with asset references
+*   **JSON Segment Processing:** Interpret and execute video segments defined in JSON format with media references
 *   **Schedule Management:** Execute segments based on predefined schedules and timing
 *   **Camera Integration:** Connect to local RTMP cameras and camera ingest containers for live video feeds
 *   **Video Processing:** FFmpeg-based video processing with static overlays, dynamic gadgets, and effects
 
-**Asset Management:**
-*   **Static Asset Sync:** Download PNG/JPEG assets from cloud and cache locally for timeline execution
-*   **Dynamic Asset Resolution:** Fetch real-time data for weather/tide gadgets using API instructions from JSON
-*   **Ad Asset Management:** Download static ad creatives and fetch dynamic ad content from ad APIs
+**Media Management:**
+*   **Static Media Sync:** Download PNG/JPEG media from cloud and cache locally for timeline execution
+*   **Dynamic Media Resolution:** Fetch real-time data for weather/tide gadgets using API instructions from JSON
+*   **Ad Media Management:** Download static ad creatives and fetch dynamic ad content from ad APIs
 *   **Ad Rotation Handling:** Process ad rotation schedules and time-bound ad slots (e.g., 6-9 PM only)
-*   **Asset Rendering:** Render dynamic overlays with live data (weather, tide, time, ads) as overlay images
-*   **Asset Caching:** Cache both static and dynamically generated assets (including ads) for offline operation
+*   **Media Rendering:** Render dynamic overlays with live data (weather, tide, time, ads) as overlay images
+*   **Media Caching:** Cache both static and dynamically generated media (including ads) for offline operation
 
 **Cloud Synchronization:**
-*   **Segment Download:** Periodically sync with cloud to download new segments, assets, and API configurations
-*   **Status Reporting:** Report execution status, camera health, asset sync status, and system metrics to cloud
+*   **Segment Download:** Periodically sync with cloud to download new segments, media, and API configurations
+*   **Status Reporting:** Report execution status, camera health, media sync status, and system metrics to cloud
 *   **Authentication:** Secure authentication with Firebase using service account credentials
-*   **Offline Operation:** Continue operation with cached segments and assets when cloud connectivity is unavailable
+*   **Offline Operation:** Continue operation with cached segments and media when cloud connectivity is unavailable
 
 **Camera Management:**
 *   **RTMP Camera Support:** Connect to and manage RTMP IP cameras with credential storage
@@ -95,10 +95,10 @@ VistterStudio transforms beautiful, static camera views into engaging, monetizab
 *   **As a surf shop manager,** I want to broadcast beach conditions with surf height, wind speed, and local event information so that I can engage the surfing community and promote my shop.
 *   **As a restaurant owner,** I want to showcase my scenic view with sunset timers, daily specials, and local promotions so that I can create an engaging digital presence that drives foot traffic.
 
-### Cloud Editor - Asset Management
+### Cloud Editor - Media Management
 *   **As a business owner,** I want to upload promotional graphics, local event flyers, and menu updates so that I can overlay them on my scenic camera feed.
 *   **As a location manager,** I want to drag weather widgets, tide charts, and time displays onto my timeline so that I can create informative overlays for my live stream.
-*   **As a marketing coordinator,** I want to see thumbnails of all my promotional assets so that I can quickly update my live stream with current offers and events.
+*   **As a marketing coordinator,** I want to see thumbnails of all my promotional media so that I can quickly update my live stream with current offers and events.
 
 ### Cloud Editor - Dynamic Data Integration
 *   **As a marina owner,** I want to add real-time tide information to my harbor view so that boaters can see current water levels and tide times.
@@ -135,12 +135,12 @@ VistterStudio transforms beautiful, static camera views into engaging, monetizab
 *   **As a marina manager,** I want to see real-time execution status so that I can ensure my harbor view is always compelling and informative.
 *   **As a location operator,** I want to receive alerts when my scenic livestream fails so that I can quickly restore my digital presence.
 
-### Broadcast Node - Asset Management
-*   **As a broadcast node operator,** I want my node to automatically download static assets (PNG/JPEG) from the cloud so that overlays display correctly.
+### Broadcast Node - Media Management
+*   **As a broadcast node operator,** I want my node to automatically download static media (PNG/JPEG) from the cloud so that overlays display correctly.
 *   **As a marina owner,** I want my broadcast node to fetch real-time tide data and render it as an overlay so that boaters see current water levels.
 *   **As a surf shop manager,** I want my broadcast node to get live weather data and display it on my beach camera feed so that surfers see current conditions.
-*   **As a business owner,** I want my broadcast node to cache assets locally so that my scenic livestream continues working even when offline.
-*   **As a location operator,** I want my broadcast node to report asset sync status so that I can ensure all overlays are up to date.
+*   **As a business owner,** I want my broadcast node to cache media locally so that my scenic livestream continues working even when offline.
+*   **As a location operator,** I want my broadcast node to report media sync status so that I can ensure all overlays are up to date.
 
 ### Broadcast Node - Advertising Management
 *   **As a broadcast node operator,** I want my node to fetch dynamic ad content from ad APIs so that my livestream displays current advertisements.
@@ -168,7 +168,7 @@ VistterStudio provides two distinct interfaces: a cloud-based editor for timelin
 - Global settings and help
 
 **Left Sidebar**
-- **Asset Library:** Upload and manage images, videos, and audio files
+- **Media Library:** Upload and manage images, videos, and audio files
 - **Camera Configuration:** RTMP camera and camera ingest container setup (static thumbnails only)
 - **Effects Gallery:** Overlay templates, transitions, and visual effects
 - **Project Browser:** List of user's projects and shared projects
@@ -207,13 +207,13 @@ VistterStudio provides two distinct interfaces: a cloud-based editor for timelin
 ### Timeline Interface
 
 **Track Management**
-- Video tracks for main camera content and video assets
+- Video tracks for main camera content and video media
 - Overlay tracks for graphics, images, and secondary cameras
 - Audio tracks for sound sources and background music
 - Track controls: visibility, mute, lock, delete
 
 **Clip Manipulation**
-- Drag cameras/assets from sidebar to timeline tracks
+- Drag cameras/media from sidebar to timeline tracks
 - Visual clip representation with static thumbnails
 - Trim handles for duration adjustment
 - Context menus for clip operations
@@ -229,7 +229,6 @@ VistterStudio provides two distinct interfaces: a cloud-based editor for timelin
 **Broadcast Node Management**
 - List of registered broadcast nodes
 - Node status and health monitoring
-- Segment distribution controls
 - Remote configuration options
 
 ### Broadcast Node Interface (Optional Web UI)
@@ -266,7 +265,7 @@ VistterStudio provides two distinct interfaces: a cloud-based editor for timelin
     },
     {
       "type": "overlay",
-      "source": "logo_asset_001",
+      "source": "logo_media_001",
       "startTime": 5000,
       "duration": 25000,
       "position": { "x": 50, "y": 50 },
@@ -280,7 +279,7 @@ VistterStudio provides two distinct interfaces: a cloud-based editor for timelin
 **Camera Source References**
 - RTMP cameras: `rtmp://<host>:<port>/bcs/channel<channel>_ext.bcs?channel=<channel>&stream=<stream>&user=<username>&password=<password>`
 - IP cameras: `ip://<device_id>/<stream_type>`
-- Asset files: `asset://<asset_id>/<filename>`
+- Media files: `media://<media_id>/<filename>`
 
 ## 6. Timeline Architecture (v2)
 
@@ -419,7 +418,7 @@ interface Clip {
   id: string;
   trackId: string;
   kind: 'video' | 'overlay' | 'audio';
-  sourceId: string;     // Camera ID or asset ID
+  sourceId: string;     // Camera ID or media ID
   startMs: number;
   durationMs: number;
   opacity?: number;
@@ -429,7 +428,7 @@ interface Clip {
   // Legacy compatibility
   cameraId?: string;
   camera?: any;
-  asset?: any;
+  media?: any;
 }
 ```
 
@@ -437,7 +436,7 @@ interface Clip {
 
 #### Drag and Drop
 **From Sidebar to Timeline:**
-1. Sidebar items (cameras/assets) have `draggable` attribute
+1. Sidebar items (cameras/media) have `draggable` attribute
 2. `onDragStart` sets `dataTransfer` with JSON payload
 3. Track drop zones handle `onDrop` events
 4. Drop position converted to time using `timeScale.tOf()`
@@ -501,7 +500,7 @@ const tick = () => {
 The cloud editor uses **static thumbnails** for timeline preview, eliminating the need for live streaming during editing:
 
 ```typescript
-const { previewContent, overlays } = useTimelinePreview(assets, getThumbnailUrl);
+const { previewContent, overlays } = useTimelinePreview(media, getThumbnailUrl);
 ```
 
 **Preview Logic:**
@@ -511,13 +510,13 @@ const { previewContent, overlays } = useTimelinePreview(assets, getThumbnailUrl)
 4. Return structured data for static thumbnail rendering
 
 **Content Priority:**
-1. Video tracks (cameras and video assets)
+1. Video tracks (cameras and video media)
 2. Overlay tracks (images and graphics)
 3. Audio tracks (background audio)
 
 **Thumbnail Integration:**
 - Static thumbnails for all camera sources (RTMP and IP cameras)
-- Automatic thumbnail generation for uploaded assets
+- Automatic thumbnail generation for uploaded media
 - Cached thumbnails for performance optimization
 - Fallback thumbnails for offline or unavailable sources
 
@@ -535,7 +534,7 @@ interface TimelineSegment {
 
 interface TrackSegment {
   type: 'video' | 'overlay' | 'audio';
-  source: string; // Camera ID or asset ID
+  source: string; // Camera ID or media ID
   startTime: number;
   duration: number;
   properties: ClipProperties;
@@ -545,7 +544,7 @@ interface TrackSegment {
 **Export Process:**
 1. Validate timeline for export compatibility
 2. Convert timeline data to JSON segment format
-3. Include asset references and camera configurations
+3. Include media references and camera configurations
 4. Upload segment to Firebase for distribution
 5. Notify broadcast nodes of new segment availability
 

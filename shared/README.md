@@ -7,7 +7,7 @@ Shared types, schemas, and utilities used across the VistterStudio ecosystem.
 The shared package provides common interfaces and utilities for:
 
 - **Timeline Data Structures**: Core timeline and segment definitions
-- **Asset Management**: Asset and API configuration types
+- **Media Management**: Media and API configuration types
 - **Data Schemas**: JSON schemas for validation
 - **Utilities**: Common helper functions
 
@@ -50,8 +50,8 @@ shared/
 - `TimelineSegment` - Complete timeline segment structure
 - `Track` - Timeline track definition
 - `Clip` - Individual timeline clip
-- `Asset` - Media asset definition
-- `AssetReference` - Reference to asset in timeline
+- `Media` - Media media definition
+- `MediaReference` - Reference to media in timeline
 
 ### Data Types
 
@@ -81,7 +81,7 @@ const segment: TimelineSegment = {
     updated: new Date().toISOString()
   },
   tracks: [],
-  assets: [],
+  media: [],
   apiConfigs: []
 };
 ```
